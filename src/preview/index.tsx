@@ -45,10 +45,8 @@ function Preview({ value }: PropTypes) {
     }
   }
 
-  const iframeUrl = new URL(
-    'preview/index.html',
-    document.location.protocol + '//' + document.location.host + document.location.pathname
-  ).toString()
+  const baseUrl = document.location.protocol + '//' + document.location.host + document.location.pathname
+  const iframeUrl = new URL('preview/index.html', baseUrl).toString()
 
   return (
     <div style={{ width: '100%' }}>
