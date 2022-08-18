@@ -45,15 +45,14 @@ function Preview({ value }: PropTypes) {
     }
   }
 
+  const iframeUrl = new URL(
+    'preview/index.html',
+    document.location.protocol + '//' + document.location.host + document.location.pathname
+  ).toString()
+
   return (
     <div style={{ width: '100%' }}>
-      <iframe
-        title={'Decentraland Renderer'}
-        id={'previewFrame'}
-        src={`${document.location.origin}/preview/index.html`}
-        width="100%"
-        height="100%"
-      ></iframe>
+      <iframe title={'Decentraland Renderer'} id={'previewFrame'} src={iframeUrl} width="100%" height="100%"></iframe>
     </div>
   )
 }
