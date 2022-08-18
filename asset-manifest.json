@@ -1,16 +1,16 @@
 {
   "files": {
-    "main.css": "/sdk-playground/static/css/main.1a0d0672.css",
-    "main.js": "/sdk-playground/static/js/main.b8bf29c8.js",
+    "main.css": "/sdk-playground/static/css/main.d50bec9b.css",
+    "main.js": "/sdk-playground/static/js/main.8e5f5186.js",
     "static/js/205.3adb2388.chunk.js": "/sdk-playground/static/js/205.3adb2388.chunk.js",
     "static/media/wasm-web_bg.wasm": "/sdk-playground/static/media/wasm-web_bg.6a1c3ab563a2db20102c.wasm",
     "index.html": "/sdk-playground/index.html",
-    "main.1a0d0672.css.map": "/sdk-playground/static/css/main.1a0d0672.css.map",
-    "main.b8bf29c8.js.map": "/sdk-playground/static/js/main.b8bf29c8.js.map",
+    "main.d50bec9b.css.map": "/sdk-playground/static/css/main.d50bec9b.css.map",
+    "main.8e5f5186.js.map": "/sdk-playground/static/js/main.8e5f5186.js.map",
     "205.3adb2388.chunk.js.map": "/sdk-playground/static/js/205.3adb2388.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.1a0d0672.css",
-    "static/js/main.b8bf29c8.js"
+    "static/css/main.d50bec9b.css",
+    "static/js/main.8e5f5186.js"
   ]
 }
