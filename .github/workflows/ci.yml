@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - "preview"
+      - preview
 
 name: Upload to Github Pages
 jobs:
