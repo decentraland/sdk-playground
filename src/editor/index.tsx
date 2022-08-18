@@ -4,13 +4,15 @@ import Editor, { OnChange, OnMount, OnValidate } from '@monaco-editor/react'
 import Preview from '../preview'
 import { defaultValue, debounce } from './utils'
 
+import { Buffer } from 'buffer'
+
 import './editor.css'
 import { getEcsTypes } from '../ecs'
 
 function EditorComponent() {
   const [preview, setPreview] = useState('')
   const [error, setError] = useState(false)
-  const [code, setCode] = useState<string>()
+  const [code, setCode] = useState<string>('')
 
   const handleEditorDidMount: OnMount = async (editor, monaco) => {
     monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
@@ -23,14 +25,23 @@ function EditorComponent() {
       jsx: monaco.languages.typescript.JsxEmit.React,
       jsxFactory: 'React.createElement'
     })
-    editor.setModel(monaco.editor.createModel(defaultValue, 'typescript', monaco.Uri.parse('file:///game.ts')))
+
+    // Get the code copied
+    const base64Code = new URLSearchParams(document.location.search).get('code') || ''
+    const code = base64Code ? Buffer.from(base64Code, 'base64').toString('utf8') : defaultValue
+
+    // Clean the URL
+    const newURL = document.location.href.split('?')[0]
+    window.history.pushState('object', document.title, newURL)
+
+    editor.setModel(monaco.editor.createModel(code, 'typescript', monaco.Uri.parse('file:///game.ts')))
     const ecsType = await getEcsTypes()
     monaco.editor.createModel(ecsType, 'typescript', monaco.Uri.parse('file:///index.d.ts'))
     setCode(editor.getValue())
   }
 
   const handleChange: OnChange = async (value) => {
-    setCode(value)
+    if (value) setCode(value)
   }
 
   const onValidate: OnValidate = async (markers) => {
@@ -54,17 +65,26 @@ function EditorComponent() {
     void renderPreview(code, error)
   }, [error, code, renderPreview])
 
+  async function handleCopyURL() {
+    const url = new URL(document.location.href)
+    const encodedCode = Buffer.from(code!, 'utf8').toString('base64')
+    url.searchParams.set('code', encodedCode)
+    await navigator.clipboard.writeText(url.toString())
+  }
+
   return (
     <div className="Editor">
-      <Editor
-        height="100vh"
-        width="50%"
-        defaultLanguage="typescript"
-        theme="vs-dark"
-        onMount={handleEditorDidMount}
-        onChange={handleChange}
-        onValidate={onValidate}
-      />
+      <div className="editor-wrapper">
+        <button onClick={handleCopyURL}>Copy URL</button>
+        <Editor
+          defaultLanguage="typescript"
+          theme="vs-dark"
+          onMount={handleEditorDidMount}
+          onChange={handleChange}
+          onValidate={onValidate}
+        />
+      </div>
+
       <Preview value={preview} />
     </div>
   )

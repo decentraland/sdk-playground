@@ -1,3 +1,9 @@
 .Editor {
   display: flex;
 }
+
+.editor-wrapper {
+  background-color: black;
+  height: 100vh;
+  width: 50%;
+}
