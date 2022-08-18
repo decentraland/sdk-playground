@@ -2,16 +2,17 @@ import { useState, useEffect, useCallback } from 'react'
 import Editor, { OnChange, OnMount, OnValidate } from '@monaco-editor/react'
 
 import Preview from '../preview'
-import { ecsTypes, defaultValue, debounce } from './utils'
+import { defaultValue, debounce } from './utils'
 
 import './editor.css'
+import { getEcsTypes } from '../ecs'
 
 function EditorComponent() {
   const [preview, setPreview] = useState('')
   const [error, setError] = useState(false)
   const [code, setCode] = useState<string>()
 
-  const handleEditorDidMount: OnMount = (editor, monaco) => {
+  const handleEditorDidMount: OnMount = async (editor, monaco) => {
     monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
       target: monaco.languages.typescript.ScriptTarget.ES2016,
       allowNonTsExtensions: true,
@@ -22,8 +23,9 @@ function EditorComponent() {
       jsx: monaco.languages.typescript.JsxEmit.React,
       jsxFactory: 'React.createElement'
     })
-    editor.setModel(monaco.editor.createModel(defaultValue, 'typescript', monaco.Uri.parse('file:///main.tsx')))
-    monaco.editor.createModel(ecsTypes, 'typescript', monaco.Uri.parse('file:///index.d.ts'))
+    editor.setModel(monaco.editor.createModel(defaultValue, 'typescript', monaco.Uri.parse('file:///game.ts')))
+    const ecsType = await getEcsTypes()
+    monaco.editor.createModel(ecsType, 'typescript', monaco.Uri.parse('file:///index.d.ts'))
     setCode(editor.getValue())
   }
 
@@ -40,7 +42,7 @@ function EditorComponent() {
   const renderPreview = useCallback(
     debounce(async (code, error) => {
       if (error) {
-        return console.log('error')
+        return console.log('error transpiling')
       }
 
       setPreview(code)

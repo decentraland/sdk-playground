@@ -14,6 +14,8 @@ jobs:
         with:
           node-version: 16.x
       - run: npm install
+      - name: add homepage to package.json
+        run: node -e "let pkg=require('./package.json'); pkg.homepage='https://decentraland.github.io/sdk-playground'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
       - run: npm run build
       - name: Deploy with gh-pages
         run: |

@@ -1,3 +1,5 @@
+// TODO: this is workaround until all routes are correctly mapped from catalyst/preview/kernel base url
+const DEBUG_PATCH = false
 export async function patchPreviewWindow(previewWin: any) {
   const previewServerUrl = 'https://ecs7-template.herokuapp.com'
 
@@ -11,7 +13,7 @@ export async function patchPreviewWindow(previewWin: any) {
         modifiedInput = previewServerUrl + urlStr.substring(preview + 'preview/index.html/'.length)
       }
     }
-    console.log(`Fetch wrapped `, { input, modifiedInput, init })
+    if (DEBUG_PATCH) console.log(`Fetch wrapped `, { input, modifiedInput, init })
     return originalFetch(modifiedInput, init)
   }
   previewWin.fetch = wrappedFetch
@@ -25,7 +27,7 @@ export async function patchPreviewWindow(previewWin: any) {
           args[1] = previewServerUrl + urlStr.substring(preview + 'preview/index.html/'.length)
         }
       }
-      console.log(`XHR wrapped `, { args })
+      if (DEBUG_PATCH) console.log(`XHR wrapped `, { args })
       return (open as any).apply(this, args)
     }
   })(previewWin.XMLHttpRequest.prototype)
@@ -44,7 +46,7 @@ export async function patchPreviewWindow(previewWin: any) {
       newUrl = urlStr.replaceAll(document.location.origin.replace('http', 'ws'), previewServerUrl.replace('http', 'ws'))
     }
 
-    console.log(`ws wrapped `, { url, newUrl })
+    if (DEBUG_PATCH) console.log(`ws wrapped `, { url, newUrl })
 
     const that = protocols ? new originalWs(newUrl, protocols) : new originalWs(newUrl)
     return that

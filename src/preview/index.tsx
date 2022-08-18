@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { getGameJsTemplate } from '../ecs'
 import { transformCode } from './execute-code'
 import { patchPreviewWindow } from './monkeyPatch'
 
@@ -14,8 +15,8 @@ function Preview({ value }: PropTypes) {
           const frameElement = document.getElementById('previewFrame')
           const tmpFrameWindow = (frameElement as any)?.contentWindow
           if (tmpFrameWindow) {
-            const gameJs = await (await fetch('template.js')).text()
-            tmpFrameWindow.PlaygroundCode = gameJs + (';' + data)
+            const gameJsTemplate = await getGameJsTemplate()
+            tmpFrameWindow.PlaygroundCode = gameJsTemplate + (';' + data)
             setTimeout(() => {
               tmpFrameWindow.postMessage('{}')
             }, 10)
@@ -45,8 +46,10 @@ function Preview({ value }: PropTypes) {
     }
   }
 
+  // Workaround so it's work in production with root path and non-root ones
   const baseUrl = document.location.protocol + '//' + document.location.host + document.location.pathname
-  const iframeUrl = new URL('preview/index.html', baseUrl).toString()
+  const iframeUrl =
+    document.location.pathname === '/' ? 'preview/index.html' : new URL('preview/index.html', baseUrl).toString()
 
   return (
     <div style={{ width: '100%' }}>

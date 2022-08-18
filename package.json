@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@dcl/eslint-config": "^1.0.6",
+    "@dcl/sdk": "^7.0.0-2875155444.commit-bb5e498",
     "@monaco-editor/react": "^4.4.5",
     "@swc/wasm-web": "^1.2.212",
     "@testing-library/jest-dom": "^5.16.4",
@@ -13,6 +14,7 @@
     "@types/node": "^16.11.43",
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
+    "fp-future": "^1.0.1",
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
     "react": "^18.2.0",
@@ -23,7 +25,9 @@
     "yoga-layout-prebuilt": "^1.10.0"
   },
   "scripts": {
-    "predeploy": "npm run build",
+    "sdk:copy": "cp node_modules/@dcl/sdk/dist/ecs7/index.min.js public/sdk && cp node_modules/@dcl/sdk/types/ecs7/index.d.ts public/sdk && cp node_modules/@dcl/amd/dist/amd.min.js public/sdk",
+    "sdk:update": "npm install @dcl/sdk@next && npm run sdk:copy",
+    "predeploy": "npm run sdk:update && npm run build",
     "deploy": "gh-pages -d build",
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -51,6 +55,5 @@
   },
   "devDependencies": {
     "gh-pages": "^4.0.0"
-  },
-  "homepage": "https://decentraland.github.io/sdk-playground"
+  }
 }
