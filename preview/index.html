@@ -639,14 +639,14 @@
       const kernelBaseUrl = 'https://sdk-team-cdn.decentraland.org/@dcl/kernel/branch/feat/allow-playground-code'
       const kernelScript = (new URL('index.js', `${kernelBaseUrl}/`)).toString()
 
-      // const kernelBaseUrl = 'http://127.0.0.1:8000/@/artifacts'
-      // const kernelScript = 'http://localhost:7666'
+      // const kernelBaseUrl = 'http://localhost:8080/'
+      // const kernelScript = 'http://localhost:8080/index.js'
 
       const rendererBaseUrl = 'https://renderer-artifacts.decentraland.org/branch/dev'
 
       const previewServerUrl = 'https://ecs7-template.herokuapp.com'
       const catalystUrl = previewServerUrl
-      const realm = `v4~${previewServerUrl}`
+      const realm = `offline`
       const position = '0,0'
 
       const url = new URL(window.location.href);
@@ -655,6 +655,7 @@
       url.searchParams.set('CATALYST', catalystUrl);
       url.searchParams.set('realm', realm);
       url.searchParams.set('position', position);
+      url.searchParams.set('LOS', '2');
       window.history.replaceState(null, null, url);
 
       await injectScript(kernelScript)
