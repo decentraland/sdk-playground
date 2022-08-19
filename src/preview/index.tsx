@@ -18,7 +18,7 @@ function Preview({ value }: PropTypes) {
             const gameJsTemplate = await getGameJsTemplate()
             tmpFrameWindow.PlaygroundCode = gameJsTemplate + (';' + data)
             setTimeout(() => {
-              tmpFrameWindow.postMessage('{}')
+              tmpFrameWindow.postMessage('sdk-playground-update')
             }, 10)
           }
         })
