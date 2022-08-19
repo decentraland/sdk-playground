@@ -57,7 +57,7 @@ function EditorComponent() {
       }
 
       setPreview(code)
-    }, 2000),
+    }, 500),
     []
   )
 
@@ -72,10 +72,17 @@ function EditorComponent() {
     await navigator.clipboard.writeText(url.toString())
   }
 
+  function handleClickRun() {
+    setPreview(preview + ' ')
+  }
+
   return (
     <div className="Editor">
       <div className="editor-wrapper">
-        <button onClick={handleCopyURL}>Copy URL</button>
+        <div className="editor-buttons">
+          <button onClick={handleCopyURL}>Copy URL</button>
+          <button onClick={handleClickRun}>Run</button>
+        </div>
         <Editor
           defaultLanguage="typescript"
           theme="vs-dark"

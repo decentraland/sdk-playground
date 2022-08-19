@@ -3,7 +3,15 @@
 }
 
 .editor-wrapper {
-  background-color: black;
+  background-color: #222;
   height: 100vh;
   width: 50%;
+}
+
+.editor-buttons {
+  display: flex;
+  padding: 2px;
+  margin: 2px;
+  gap: 10px;
+  justify-content: flex-end;
 }
