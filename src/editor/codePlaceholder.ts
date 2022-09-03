@@ -27,9 +27,9 @@ function createCube(x: number, y: number, z: number, spawner = true): Entity {
 }
 
 function circularSystem(dt: number) {
-  const entitiesWithBoxShapes = engine.groupOf(BoxShape, Transform)
+  const entitiesWithBoxShapes = engine.getEntitiesWith(BoxShape, Transform)
   for (const [entity, _boxShape, _transform] of entitiesWithBoxShapes) {
-    const mutableTransform = Transform.mutable(entity)
+    const mutableTransform = Transform.getMutable(entity)
 
     mutableTransform.rotation = Quaternion.multiply(
       mutableTransform.rotation,
@@ -39,7 +39,7 @@ function circularSystem(dt: number) {
 }
 
 function spawnerSystem() {
-  const clickedCubes = engine.groupOf(OnPointerDownResult)
+  const clickedCubes = engine.getEntitiesWith(OnPointerDownResult)
   for (const [_entity, _cube] of clickedCubes) {
     createCube(Math.random() * 8 + 1, Math.random() * 8, Math.random() * 8 + 1, false)
   }
@@ -50,11 +50,3 @@ const mainCube = createCube(8, 1, 8)
 engine.addSystem(circularSystem)
 engine.addSystem(spawnerSystem)
 `
-
-export function debounce<F extends (...params: any[]) => void>(fn: F, delay: number) {
-  let timeoutID: NodeJS.Timeout | null = null
-  return function (this: any, ...args: any[]) {
-    timeoutID && clearTimeout(timeoutID)
-    timeoutID = setTimeout(() => fn.apply(this, args), delay)
-  } as F
-}

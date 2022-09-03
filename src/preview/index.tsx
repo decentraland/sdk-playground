@@ -46,11 +46,22 @@ function Preview({ value }: PropTypes) {
     }
   }
 
-  // Workaround so it's work in production with root path and non-root ones
-  const baseUrl = document.location.protocol + '//' + document.location.host + document.location.pathname
-  const iframeUrl =
-    document.location.pathname === '/' ? 'preview/index.html' : new URL('preview/index.html', baseUrl).toString()
+  let iframeUrl = ''
+  try {
+    const urlPath = `preview/index.html`
 
+    // Workaround so it's work in production with root path and non-root ones
+    if (document.location.pathname === '/') {
+      const baseUrl = document.location.protocol + '//' + document.location.host + document.location.pathname
+      const url = new URL(urlPath, baseUrl)
+      url.search = document.location.search
+      iframeUrl = url.toString()
+    } else {
+      iframeUrl = `${urlPath}?${document.location.search}`
+    }
+  } catch (err) {}
+
+  console.log({ iframeUrl })
   return (
     <div style={{ width: '100%' }}>
       <iframe title={'Decentraland Renderer'} id={'previewFrame'} src={iframeUrl} width="100%" height="100%"></iframe>

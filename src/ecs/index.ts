@@ -14,11 +14,18 @@ const gameJsPromises: IFuture<string>[] = []
 const ecsTypesPromises: IFuture<string>[] = []
 
 async function refreshEcsContent() {
-  const amdJs = await (await fetch('sdk/amd.min.js')).text()
-  const ecs7IndexJs = await (await fetch('sdk/index.min.js')).text()
+  const params = new URLSearchParams(document.location.search)
+
+  const jsSdkToolchainBranch = params.get('sdk-branch') || 'refs/heads/main'
+  const amdJsUrl = `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${jsSdkToolchainBranch}/playground/amd.min.js`
+  const ecs7IndexJsUrl = `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${jsSdkToolchainBranch}/playground/index.min.js`
+  const ecs7IndexDTsUrl = `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${jsSdkToolchainBranch}/playground/index.d.ts`
+
+  const amdJs = await (await fetch(amdJsUrl)).text()
+  const ecs7IndexJs = await (await fetch(ecs7IndexJsUrl)).text()
 
   ecsData.gameJsTemplate = amdJs + ';\n' + ecs7IndexJs + ';\n'
-  ecsData.ecsTypes = await (await fetch('sdk/index.d.ts')).text()
+  ecsData.ecsTypes = await (await fetch(ecs7IndexDTsUrl)).text()
 
   for (const prom of gameJsPromises) {
     prom.resolve(ecsData.gameJsTemplate)

@@ -2,12 +2,20 @@ import { useState, useEffect, useCallback } from 'react'
 import Editor, { OnChange, OnMount, OnValidate } from '@monaco-editor/react'
 
 import Preview from '../preview'
-import { defaultValue, debounce } from './utils'
+import { defaultValue } from './codePlaceholder'
 
 import { Buffer } from 'buffer'
 
 import './editor.css'
 import { getEcsTypes } from '../ecs'
+
+function debounce<F extends (...params: any[]) => void>(fn: F, delay: number) {
+  let timeoutID: NodeJS.Timeout | null = null
+  return function (this: any, ...args: any[]) {
+    timeoutID && clearTimeout(timeoutID)
+    timeoutID = setTimeout(() => fn.apply(this, args), delay)
+  } as F
+}
 
 function EditorComponent() {
   const [preview, setPreview] = useState('')
@@ -31,8 +39,8 @@ function EditorComponent() {
     const code = base64Code ? Buffer.from(base64Code, 'base64').toString('utf8') : defaultValue
 
     // Clean the URL
-    const newURL = document.location.href.split('?')[0]
-    window.history.pushState('object', document.title, newURL)
+    // const newURL = document.location.href.split('?')[0]
+    // window.history.pushState('object', document.title, newURL)
 
     editor.setModel(monaco.editor.createModel(code, 'typescript', monaco.Uri.parse('file:///game.ts')))
     const ecsType = await getEcsTypes()
