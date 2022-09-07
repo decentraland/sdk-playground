@@ -7,7 +7,8 @@ import { defaultValue } from './codePlaceholder'
 import { Buffer } from 'buffer'
 
 import './editor.css'
-import { getEcsTypes } from '../ecs'
+import { getEcsTypes, getGameJsTemplate } from '../ecs'
+import { transformCode } from '../preview/execute-code'
 
 function debounce<F extends (...params: any[]) => void>(fn: F, delay: number) {
   let timeoutID: NodeJS.Timeout | null = null
@@ -18,7 +19,7 @@ function debounce<F extends (...params: any[]) => void>(fn: F, delay: number) {
 }
 
 function EditorComponent() {
-  const [preview, setPreview] = useState('')
+  const [previewJsCode, setPreviewJsCode] = useState('')
   const [error, setError] = useState(false)
   const [code, setCode] = useState<string>('')
 
@@ -63,8 +64,9 @@ function EditorComponent() {
       if (error) {
         return console.log('error transpiling')
       }
-
-      setPreview(code)
+      const compiledCode = await transformCode(code)
+      const gameJsTemplate = await getGameJsTemplate()
+      setPreviewJsCode(gameJsTemplate + (';' + compiledCode))
     }, 500),
     []
   )
@@ -81,7 +83,7 @@ function EditorComponent() {
   }
 
   function handleClickRun() {
-    setPreview(preview + ' ')
+    setPreviewJsCode(previewJsCode + ' ')
   }
 
   return (
@@ -91,16 +93,18 @@ function EditorComponent() {
           <button onClick={handleCopyURL}>Copy URL</button>
           <button onClick={handleClickRun}>Run</button>
         </div>
-        <Editor
-          defaultLanguage="typescript"
-          theme="vs-dark"
-          onMount={handleEditorDidMount}
-          onChange={handleChange}
-          onValidate={onValidate}
-        />
+        <div>
+          <Editor
+            defaultLanguage="typescript"
+            theme="vs-dark"
+            onMount={handleEditorDidMount}
+            onChange={handleChange}
+            onValidate={onValidate}
+          />
+        </div>
       </div>
 
-      <Preview value={preview} />
+      <Preview compiledCode={previewJsCode} />
     </div>
   )
 }

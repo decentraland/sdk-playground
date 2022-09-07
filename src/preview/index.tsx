@@ -1,32 +1,23 @@
 import { useEffect } from 'react'
-import { getGameJsTemplate } from '../ecs'
-import { transformCode } from './execute-code'
 import { patchPreviewWindow } from './monkeyPatch'
 
 interface PropTypes {
-  value: string
+  compiledCode: string
 }
 
-function Preview({ value }: PropTypes) {
+function Preview({ compiledCode }: PropTypes) {
   useEffect(() => {
-    if (value) {
-      transformCode(value)
-        .then(async (data: string) => {
-          const frameElement = document.getElementById('previewFrame')
-          const tmpFrameWindow = (frameElement as any)?.contentWindow
-          if (tmpFrameWindow) {
-            const gameJsTemplate = await getGameJsTemplate()
-            tmpFrameWindow.PlaygroundCode = gameJsTemplate + (';' + data)
-            setTimeout(() => {
-              tmpFrameWindow.postMessage('sdk-playground-update')
-            }, 10)
-          }
-        })
-        .catch((err) => {
-          console.error(err)
-        })
+    if (compiledCode) {
+      const frameElement = document.getElementById('previewFrame')
+      const tmpFrameWindow = (frameElement as any)?.contentWindow
+      if (tmpFrameWindow) {
+        tmpFrameWindow.PlaygroundCode = compiledCode
+        setTimeout(() => {
+          tmpFrameWindow.postMessage('sdk-playground-update')
+        }, 10)
+      }
     }
-  }, [value])
+  }, [compiledCode])
 
   const frameElement = document.getElementById('previewFrame')
   const tmpFrameWindow = (frameElement as any)?.contentWindow
@@ -49,7 +40,6 @@ function Preview({ value }: PropTypes) {
   let iframeUrl = ''
   try {
     const urlPath = `preview/index.html`
-
     // Workaround so it's work in production with root path and non-root ones
     if (document.location.pathname === '/') {
       const baseUrl = document.location.protocol + '//' + document.location.host + document.location.pathname
