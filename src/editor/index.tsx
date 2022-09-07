@@ -93,15 +93,13 @@ function EditorComponent() {
           <button onClick={handleCopyURL}>Copy URL</button>
           <button onClick={handleClickRun}>Run</button>
         </div>
-        <div>
-          <Editor
-            defaultLanguage="typescript"
-            theme="vs-dark"
-            onMount={handleEditorDidMount}
-            onChange={handleChange}
-            onValidate={onValidate}
-          />
-        </div>
+        <Editor
+          defaultLanguage="typescript"
+          theme="vs-dark"
+          onMount={handleEditorDidMount}
+          onChange={handleChange}
+          onValidate={onValidate}
+        />
       </div>
 
       <Preview compiledCode={previewJsCode} />
