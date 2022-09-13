@@ -1,5 +1,5 @@
 import { transformSync } from '@swc/wasm-web'
-import { getEcsTypes } from '../ecs'
+import { getEcsTypes } from '../utils/bundle'
 
 let swc: { transformSync: typeof transformSync }
 

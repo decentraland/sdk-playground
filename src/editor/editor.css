@@ -1,17 +1,51 @@
-.Editor {
+.editor {
   display: flex;
+  height: 100vh;
+}
+
+.preview {
+  width: 50%;
+  height: 100vh;
+}
+
+.preview > div {
+  height: 100%;
 }
 
 .editor-wrapper {
   background-color: #222;
-  height: 100vh;
   width: 50%;
+  height: calc(100vh - 50px);
 }
 
 .editor-buttons {
   display: flex;
-  padding: 2px;
-  margin: 2px;
-  gap: 10px;
-  justify-content: flex-end;
+  height: 50px;
+  align-items: center;
+  justify-content: center;
+  margin-left: 18px;
 }
+
+.dcl.header-menu {
+  margin-bottom: unset !important ;
+}
+.header-menu-right > div {
+  margin-left: 16px;
+}
+
+.header-menu-right > div:last-child {
+  margin-right: 14px;
+}
+
+.ui-dropdown {
+  border-radius: 3px;
+  font-size: 14px;
+  line-height: 18px;
+  border: 1px solid var(--primary);
+  padding: 7px 20px;
+}
+/*
+.editor-buttons > div {
+  margin-left: 16px;
+}
+ */

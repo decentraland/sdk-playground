@@ -1,5 +1,4 @@
-export const defaultValue = `
-function createCube(x: number, y: number, z: number, spawner = true): Entity {
+export const scene = `function createCube(x: number, y: number, z: number, spawner = true): Entity {
   const entity = engine.addEntity()
 
   Transform.create(entity, {
@@ -50,3 +49,4 @@ const mainCube = createCube(8, 1, 8)
 engine.addSystem(circularSystem)
 engine.addSystem(spawnerSystem)
 `
+export default scene

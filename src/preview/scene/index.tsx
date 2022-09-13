@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { getGameJsTemplate } from '../../ecs'
+import { getGameJsTemplate } from '../../utils/bundle'
 import { transformCode } from '../execute-code'
 import { patchPreviewWindow } from './monkeyPatch'
 
