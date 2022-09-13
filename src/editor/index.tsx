@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import Editor, { OnChange, OnMount, OnValidate } from '@monaco-editor/react'
 
-import Preview from '../preview'
+import Preview from '../preview/scene'
 import { defaultValue } from './codePlaceholder'
 
 import { Buffer } from 'buffer'
 
 import './editor.css'
-import { getEcsTypes, getGameJsTemplate } from '../ecs'
-import { transformCode } from '../preview/execute-code'
+import { getEcsTypes } from '../ecs'
 
 function debounce<F extends (...params: any[]) => void>(fn: F, delay: number) {
   let timeoutID: NodeJS.Timeout | null = null
@@ -39,10 +38,6 @@ function EditorComponent() {
     const base64Code = new URLSearchParams(document.location.search).get('code') || ''
     const code = base64Code ? Buffer.from(base64Code, 'base64').toString('utf8') : defaultValue
 
-    // Clean the URL
-    // const newURL = document.location.href.split('?')[0]
-    // window.history.pushState('object', document.title, newURL)
-
     editor.setModel(monaco.editor.createModel(code, 'typescript', monaco.Uri.parse('file:///game.ts')))
     const ecsType = await getEcsTypes()
     monaco.editor.createModel(ecsType, 'typescript', monaco.Uri.parse('file:///index.d.ts'))
@@ -64,9 +59,7 @@ function EditorComponent() {
       if (error) {
         return console.log('error transpiling')
       }
-      const compiledCode = await transformCode(code)
-      const gameJsTemplate = await getGameJsTemplate()
-      setPreviewJsCode(gameJsTemplate + (';' + compiledCode))
+      setPreviewJsCode(code)
     }, 500),
     []
   )
@@ -102,7 +95,7 @@ function EditorComponent() {
         />
       </div>
 
-      <Preview compiledCode={previewJsCode} />
+      <Preview code={previewJsCode} />
     </div>
   )
 }
