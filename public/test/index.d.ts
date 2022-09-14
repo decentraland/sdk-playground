@@ -1,3 +1,4 @@
+
 declare type Children = any
 
 declare interface Color3 {
@@ -130,15 +131,13 @@ declare type Position = {
 }
 
 declare namespace ReactEcs {
-  namespace JSX {
+  export namespace JSX {
     interface Element {}
     type IntrinsicElements = EcsElements
     interface Component {}
   }
   const createElement: any
 }
-export { ReactEcs }
-export default ReactEcs
 
 declare function removeUi(index: number): void
 

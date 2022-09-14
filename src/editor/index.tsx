@@ -1,18 +1,15 @@
 import { Button, Dropdown, HeaderMenu } from 'decentraland-ui'
 import { Buffer } from 'buffer'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import * as monacoType from 'monaco-editor/esm/vs/editor/editor.api'
 import MonacoEditor, { OnChange, OnMount, OnValidate } from '@monaco-editor/react'
 
 import { getBundle } from '../utils/bundle'
+import getDefaultCode from '../utils/default-code'
 import PreviewScene from '../preview/scene'
 import PreviewUi from '../preview/ui'
-import defaultValue from '../utils/placeholder'
 
 import './editor.css'
-
-type MonacoType = monacoType.editor.IStandaloneCodeEditor
-type Model = monacoType.editor.ITextModel
 
 function debounce<F extends (...params: any[]) => void>(fn: F, delay: number) {
   let timeoutID: NodeJS.Timeout | null = null
@@ -24,18 +21,28 @@ function debounce<F extends (...params: any[]) => void>(fn: F, delay: number) {
 
 type Tab = 'ui' | 'scene'
 
+function updateUrl(url: string | URL) {
+  window.history.replaceState(null, '', url)
+}
+
+function getFilesUri(monaco: typeof monacoType) {
+  return {
+    ts: monaco.Uri.parse('file:///game.tsx'),
+    types: monaco.Uri.parse('file:///index.d.ts')
+  }
+}
+
 function EditorComponent() {
+  const isMounted = useRef(false)
   const [code, setCode] = useState<string>('')
   const [tab, setTab] = useState<Tab>('ui')
   const [previewJsCode, setPreviewJsCode] = useState('')
   const [error, setError] = useState(false)
-  const [editor, setEditor] = useState<MonacoType>()
   const [monaco, setMonaco] = useState<typeof monacoType>()
-  const [model, setModel] = useState<Model>()
 
   const handleEditorDidMount: OnMount = async (editor, monaco) => {
-    setEditor(editor)
     setMonaco(monaco)
+
     monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
       target: monaco.languages.typescript.ScriptTarget.ES2016,
       allowNonTsExtensions: true,
@@ -43,40 +50,46 @@ function EditorComponent() {
       module: monaco.languages.typescript.ModuleKind.CommonJS,
       noEmit: true,
       typeRoots: ['node_modules/@types'],
-      jsx: monaco.languages.typescript.JsxEmit.React,
+      jsx: monaco.languages.typescript.JsxEmit.Preserve,
       jsxFactory: 'ReactEcs.createElement'
     })
 
     const bundle = await getBundle(tab)
-    // Get the code copied
-    const base64Code = new URLSearchParams(document.location.search).get('code') || ''
-    const code = base64Code ? Buffer.from(base64Code, 'base64').toString('utf8') : defaultValue(tab)
+    const code = getDefaultCode(tab)
+    const fileUris = getFilesUri(monaco)
 
-    editor.setModel(monaco.editor.createModel(code, 'typescript', monaco.Uri.parse('file:///game.ts')))
-    const model = monaco.editor.createModel(bundle.types, 'typescript', monaco.Uri.parse('file:///index.d.ts'))
-    setModel(model)
+    editor.setModel(monaco.editor.createModel(code, 'typescript', fileUris.ts))
+    monaco.editor.createModel(bundle.types, 'typescript', fileUris.types)
+    isMounted.current = true
   }
 
-  async function handleChangeTab(tab: Tab) {
-    if (!editor || !monaco) return
-    setTab(tab)
-    if (model) {
-      model.dispose()
+  async function handleChangeTab(nextTab: Tab) {
+    if (tab === nextTab) return
+    setTab(nextTab)
+  }
+
+  useEffect(() => {
+    async function updateEditor() {
+      if (!monaco || !isMounted.current) return
+      const fileUris = getFilesUri(monaco)
+
+      const bundle = await getBundle(tab)
+      const code = getDefaultCode(tab)
+      monaco.editor.getModel(fileUris.ts)?.setValue(code)
+      monaco.editor.getModel(fileUris.types)?.setValue(bundle.types)
     }
-    const bundle = await getBundle(tab)
-    const code = defaultValue(tab)
-    const newModel = monaco.editor.createModel(bundle.types, 'typescript', monaco.Uri.parse('file:///index.d.ts'))
-
-    editor.setValue(code)
-    setModel(newModel)
-  }
+    void updateEditor()
+  }, [tab, monaco])
 
   async function handleCopyURL() {
-    if (!editor) return
+    if (!monaco) return
     const url = new URL(document.location.href)
-    const encodedCode = Buffer.from(editor.getValue(), 'utf8').toString('base64')
-    url.searchParams.set('code', encodedCode)
+    const fileUris = getFilesUri(monaco)
+    const code = monaco.editor.getModel(fileUris.ts)?.getValue() || ''
+    const encodedCode = Buffer.from(code, 'utf8').toString('base64')
 
+    url.searchParams.set('code', encodedCode)
+    updateUrl(url)
     await navigator.clipboard.writeText(url.toString())
   }
 
