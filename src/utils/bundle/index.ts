@@ -1,80 +1,143 @@
+type ListOfURL = {
+  amdJsUrl: string
+  ecs7IndexJsUrl: string
+  ecs7IndexDTsUrl: string
+  snippetsInfoJsonUrl: string
+  snippetsBaseUrl: string
+  reactEcs7IndexJsUrl: string
+  reactEcs7IndexDTsUrl: string
+}
+
 type Bundle = {
   js: string
   types: string
 }
 
-type Cache = {
-  scene: Partial<Bundle>
-  ui: Partial<Bundle>
+type SnippetInfoJson = {
+  content: {
+    path: string
+  }[]
 }
 
-const bundle: Cache = {
-  scene: {},
-  ui: {}
+type PackagesData = {
+  scene: Bundle
+  ui: Bundle
+  snippetInfo: SnippetInfoJson
+  urls: ListOfURL
 }
 
-export function getBranch() {
-  const params = new URLSearchParams(document.location.search)
-  return params.get('sdk-branch') || 'refs/heads/main'
+const cache: Map<string, PackagesData> = new Map()
+
+// version can be
+// - a branch: 'feat/new-feature', 'fix/something', 'main' maps to 'refs/heads/main'
+// - @next: maps to branch 'refs/heads/main'
+// - a clean tagged version: 7.0.3, 7.2.0
+// - a commit version: '7.0.0-commit-bad7ffadbfe7e'
+
+function getS3OrUnpacked(version: string) {
+  // TODO: After the first release, remove the 'latest' in this first condition
+  if (version === 'main' || version === 'next' || version === 'latest') {
+    return { s3: 'refs/heads/main' }
+  } else if (version.indexOf('.') !== -1 || version === 'latest') {
+    return { unpacked: version }
+  } else {
+    return { s3: version }
+  }
 }
 
-async function refreshEcsContent() {
-  await Promise.all([getEcsTypes(), getGameJsTemplate(), getReactEcs()])
-  return bundle
+export function getUrls(version: string): ListOfURL {
+  const source = getS3OrUnpacked(version)
+  if (source.s3) {
+    const baseUrl = `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${source.s3}/playground`
+    return {
+      amdJsUrl: `${baseUrl}/sdk/amd.min.js`,
+      ecs7IndexJsUrl: `${baseUrl}/sdk/index.min.js`,
+      ecs7IndexDTsUrl: `${baseUrl}/sdk/index.d.ts`,
+      snippetsInfoJsonUrl: `${baseUrl}/snippets/info.json`,
+      snippetsBaseUrl: `${baseUrl}/snippets/`,
+      reactEcs7IndexJsUrl: `${baseUrl}/sdk/react-ecs.index.min.js`,
+      reactEcs7IndexDTsUrl: `${baseUrl}/sdk/react-ecs.index.d.ts`
+    }
+  } else {
+    // unpkg.com/:package@:version/:file
+    return {
+      amdJsUrl: `https://unpkg.com/@dcl/amd@${version}/dist/amd.min.js`,
+      ecs7IndexJsUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/index.min.js`,
+      ecs7IndexDTsUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/index.d.ts`,
+      snippetsInfoJsonUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/playground/snippets/info.json`,
+      snippetsBaseUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/playground/snippets/`,
+      reactEcs7IndexJsUrl: `https://unpkg.com/@dcl/react-ecs@${version}/dist/index.min.js`,
+      reactEcs7IndexDTsUrl: `https://unpkg.com/@dcl/react-ecs@${version}/dist/index.d.ts`
+    }
+  }
 }
-
-export async function getGameJsTemplate() {
-  if (bundle.scene.js) {
-    return bundle.scene.js
+/**
+ * Fetch all data from published packages neccesary to develop in the playground
+ * @param version
+ * @returns
+ */
+export async function getPackagesData(version: string): Promise<PackagesData> {
+  if (cache.get(version)) {
+    return cache.get(version)!
   }
 
-  const jsSdkToolchainBranch = getBranch()
-  const amdJsUrl = `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${jsSdkToolchainBranch}/playground/amd.min.js`
-  const ecs7IndexJsUrl = `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${jsSdkToolchainBranch}/playground/index.min.js`
+  const urls = getUrls(version)
+  try {
+    const [amdJs, ecs7IndexJs, ecs7IndexDTs, snippetsInfoJson, reactEcs7IndexJs, reactEcs7IndexDTs] = await Promise.all(
+      [
+        fetch(urls.amdJsUrl).then((res) => res.text()),
+        fetch(urls.ecs7IndexJsUrl).then((res) => res.text()),
+        fetch(urls.ecs7IndexDTsUrl).then((res) => res.text()),
+        fetch(urls.snippetsInfoJsonUrl).then((res) => res.json()),
+        fetch(urls.reactEcs7IndexJsUrl).then((res) => res.text()),
+        fetch(urls.reactEcs7IndexDTsUrl).then((res) => res.text())
+      ]
+    )
 
-  const amdJs = await (await fetch(amdJsUrl)).text()
-  const ecs7IndexJs = await (await fetch(ecs7IndexJsUrl)).text()
+    const ret: PackagesData = {
+      scene: {
+        js: amdJs + ';\n' + ecs7IndexJs + ';\n',
+        types: ecs7IndexDTs
+      },
+      ui: {
+        js: reactEcs7IndexJs,
+        types: reactEcs7IndexDTs
+      },
+      snippetInfo: snippetsInfoJson as SnippetInfoJson,
+      urls
+    }
+    cache.set(version, ret)
+  } catch (err) {
+    console.error(err)
 
-  bundle.scene.js = amdJs + ';\n' + ecs7IndexJs + ';\n'
-  return bundle.scene.js
-}
+    // Fallback every wrong version to latest
+    if (version !== 'latest') {
+      return getPackagesData('latest')
+    }
 
-export async function getEcsTypes() {
-  if (bundle.scene.types) {
-    return bundle.scene.types
+    throw new Error(
+      `Fatal error, package data fetching fails and it couldn't be possible to fallback to latest version.`
+    )
   }
-  const jsSdkToolchainBranch = getBranch()
-  const ecs7IndexDTsUrl = `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${jsSdkToolchainBranch}/playground/index.d.ts`
 
-  bundle.scene.types = await (await fetch(ecs7IndexDTsUrl)).text()
-  return bundle.scene.types
+  return cache.get(version)!
 }
 
-export async function getReactEcs(): Promise<Bundle> {
-  const ecs7IndexDTsUrl = `http://localhost:3000/test/index.d.ts`
-  const ecs7IndexJsUrl = `http://localhost:3000/test/index.min.js`
-
-  const js = bundle.ui.js || (await (await fetch(ecs7IndexJsUrl)).text())
-  const types = bundle.ui.types || (await (await fetch(ecs7IndexDTsUrl)).text())
-
-  bundle.ui = { types, js }
-  return { types, js }
-}
-
-export async function getSdk(): Promise<Bundle> {
-  const js = bundle.scene.js || (await getGameJsTemplate())
-  const types = bundle.scene.types || (await getEcsTypes())
-
-  bundle.scene = { types, js }
-  return { types, js }
-}
-
-export async function getBundle(type: 'ui' | 'scene'): Promise<Bundle> {
+/**
+ * Get the bundle(js and types) depending on the type of editor.
+ * @param type 'ui' or 'scene'
+ * @returns return the js code and its types
+ */
+export async function getBundle(type: 'ui' | 'scene', version: string = 'latest'): Promise<Bundle> {
   if (type === 'ui') {
-    return getReactEcs()
+    return getPackagesData(version).then((res) => res.ui)
   }
 
-  return getSdk()
+  return getPackagesData(version).then((res) => res.scene)
 }
 
-refreshEcsContent().then(console.log).catch(console.error)
+export function getBranchFromQueryParams() {
+  const params = new URLSearchParams(document.location.search)
+  return params.get('sdk-branch') || 'main'
+}
+getPackagesData(getBranchFromQueryParams()).then(console.log).catch(console.error)

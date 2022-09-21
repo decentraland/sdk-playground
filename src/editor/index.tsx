@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import * as monacoType from 'monaco-editor/esm/vs/editor/editor.api'
 import MonacoEditor, { OnChange, OnMount, OnValidate } from '@monaco-editor/react'
 
-import { getBundle } from '../utils/bundle'
+import { getBranchFromQueryParams, getBundle } from '../utils/bundle'
 import getDefaultCode from '../utils/default-code'
 import PreviewScene from '../preview/scene'
 import PreviewUi from '../preview/ui'
@@ -54,7 +54,7 @@ function EditorComponent() {
       jsxFactory: 'ReactEcs.createElement'
     })
 
-    const bundle = await getBundle(tab)
+    const bundle = await getBundle(tab, getBranchFromQueryParams())
     const code = getDefaultCode(tab)
     const fileUris = getFilesUri(monaco)
 
@@ -73,7 +73,7 @@ function EditorComponent() {
       if (!monaco || !isMounted.current) return
       const fileUris = getFilesUri(monaco)
 
-      const bundle = await getBundle(tab)
+      const bundle = await getBundle(tab, getBranchFromQueryParams())
       const code = getDefaultCode(tab)
       monaco.editor.getModel(fileUris.ts)?.setValue(code)
       monaco.editor.getModel(fileUris.types)?.setValue(bundle.types)

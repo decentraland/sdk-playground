@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { getGameJsTemplate } from '../../utils/bundle'
+import { getBranchFromQueryParams, getPackagesData } from '../../utils/bundle'
 import { transformCode } from '../execute-code'
 import { patchPreviewWindow } from './monkeyPatch'
 
@@ -12,7 +12,7 @@ function Preview({ code }: PropTypes) {
     async function compileCode() {
       if (code) {
         const compiledCode = await transformCode(code)
-        const gameJsTemplate = await getGameJsTemplate()
+        const gameJsTemplate = await (await getPackagesData(getBranchFromQueryParams())).scene.js
         const previewCode = gameJsTemplate + (';' + compiledCode)
         const frameElement = document.getElementById('previewFrame')
         const tmpFrameWindow = (frameElement as any)?.contentWindow
