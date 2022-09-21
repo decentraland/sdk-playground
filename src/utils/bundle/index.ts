@@ -28,6 +28,14 @@ type PackagesData = {
 
 const cache: Map<string, PackagesData> = new Map()
 
+function parseReactTypes(types: string) {
+  // Strip export { } to be parsed as a module
+  const fixedTypes = types.replace('export { }', '').replace(/declare /g, '')
+  return `declare module '@dcl/react-ecs' {
+    ${fixedTypes}
+  }`
+}
+
 // version can be
 // - a branch: 'feat/new-feature', 'fix/something', 'main' maps to 'refs/heads/main'
 // - @next: maps to branch 'refs/heads/main'
@@ -38,7 +46,7 @@ function getS3OrUnpacked(version: string) {
   // TODO: After the first release, remove the 'latest' in this first condition
   if (version === 'main' || version === 'next' || version === 'latest') {
     return { s3: 'refs/heads/main' }
-  } else if (version.indexOf('.') !== -1 || version === 'latest') {
+  } else if (version.includes('.') || version === 'latest') {
     return { unpacked: version }
   } else {
     return { s3: version }
@@ -90,7 +98,9 @@ export async function getPackagesData(version: string): Promise<PackagesData> {
         fetch(urls.ecs7IndexDTsUrl).then((res) => res.text()),
         fetch(urls.snippetsInfoJsonUrl).then((res) => res.json()),
         fetch(urls.reactEcs7IndexJsUrl).then((res) => res.text()),
-        fetch(urls.reactEcs7IndexDTsUrl).then((res) => res.text())
+        fetch(urls.reactEcs7IndexDTsUrl)
+          .then((res) => res.text())
+          .then(parseReactTypes)
       ]
     )
 

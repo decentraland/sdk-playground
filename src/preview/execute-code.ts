@@ -3,7 +3,7 @@ import { getBranchFromQueryParams, getPackagesData } from '../utils/bundle'
 
 let swc: { transformSync: typeof transformSync }
 
-export async function transformCode(codeString: string) {
+export async function compile(codeString: string) {
   if (!swc) {
     const module = await import('@swc/wasm-web')
     await module.default()

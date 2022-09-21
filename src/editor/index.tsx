@@ -54,6 +54,7 @@ function EditorComponent() {
       jsxFactory: 'ReactEcs.createElement'
     })
 
+    // TODO: getBranchFromQueryParams should be selected by the user with some UI
     const bundle = await getBundle(tab, getBranchFromQueryParams())
     const code = getDefaultCode(tab)
     const fileUris = getFilesUri(monaco)
