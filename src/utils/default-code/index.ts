@@ -1,3 +1,5 @@
+import { Buffer } from 'buffer'
+
 import scene from './scene'
 import ui from './ui'
 

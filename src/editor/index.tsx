@@ -73,6 +73,7 @@ function EditorComponent() {
   useEffect(() => {
     async function updateEditor() {
       if (!monaco || !isMounted.current) return
+      updateUrl(new URL(document.location.href))
       const fileUris = getFilesUri(monaco)
 
       const bundle = await getBundle(tab, getBranchFromQueryParams())
