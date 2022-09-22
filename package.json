@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@dcl/eslint-config": "^1.0.6",
+    "@dcl/react-ecs": "^0.0.1-3100621952.commit-d6e10e5",
     "@dcl/sdk": "^7.0.0-2875155444.commit-bb5e498",
     "@monaco-editor/react": "^4.4.5",
     "@swc/wasm-web": "^1.2.212",
@@ -15,9 +16,7 @@
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
     "buffer": "^6.0.3",
-    "fp-future": "^1.0.1",
-    "lodash.debounce": "^4.0.8",
-    "lodash.throttle": "^4.1.1",
+    "decentraland-ui": "^3.11.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
@@ -26,14 +25,13 @@
     "yoga-layout-prebuilt": "^1.10.0"
   },
   "scripts": {
-    "sdk:copy": "cp node_modules/@dcl/sdk/dist/ecs7/index.min.js public/sdk && cp node_modules/@dcl/sdk/types/ecs7/index.d.ts public/sdk && cp node_modules/@dcl/amd/dist/amd.min.js public/sdk",
-    "sdk:update": "npm install @dcl/sdk@next && npm run sdk:copy",
-    "predeploy": "npm run sdk:update && npm run build",
+    "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "postinstall": "semantic-ui-css-patch"
   },
   "eslintConfig": {
     "extends": [
@@ -55,6 +53,7 @@
     ]
   },
   "devDependencies": {
+    "@semantic-ui-react/css-patch": "^1.1.2",
     "gh-pages": "^4.0.0"
   }
 }

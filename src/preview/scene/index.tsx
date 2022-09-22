@@ -1,23 +1,33 @@
 import { useEffect } from 'react'
+import { getBranchFromQueryParams, getPackagesData } from '../../utils/bundle'
+import { compile } from '../execute-code'
 import { patchPreviewWindow } from './monkeyPatch'
 
 interface PropTypes {
-  compiledCode: string
+  code: string
 }
 
-function Preview({ compiledCode }: PropTypes) {
+function Preview({ code }: PropTypes) {
   useEffect(() => {
-    if (compiledCode) {
-      const frameElement = document.getElementById('previewFrame')
-      const tmpFrameWindow = (frameElement as any)?.contentWindow
-      if (tmpFrameWindow) {
-        tmpFrameWindow.PlaygroundCode = compiledCode
-        setTimeout(() => {
-          tmpFrameWindow.postMessage('sdk-playground-update')
-        }, 10)
+    async function compileCode() {
+      if (code) {
+        const compiledCode = await compile(code)
+        const gameJsTemplate = (await getPackagesData(getBranchFromQueryParams())).scene.js
+        const previewCode = gameJsTemplate + (';' + compiledCode)
+        const frameElement = document.getElementById('previewFrame')
+        const tmpFrameWindow = (frameElement as any)?.contentWindow
+        if (tmpFrameWindow) {
+          tmpFrameWindow.PlaygroundCode = previewCode
+          setTimeout(() => {
+            tmpFrameWindow.postMessage('sdk-playground-update')
+          }, 10)
+        }
       }
     }
-  }, [compiledCode])
+    compileCode().catch((e) => {
+      console.log(e)
+    })
+  }, [code])
 
   const frameElement = document.getElementById('previewFrame')
   const tmpFrameWindow = (frameElement as any)?.contentWindow
@@ -51,7 +61,6 @@ function Preview({ compiledCode }: PropTypes) {
     }
   } catch (err) {}
 
-  console.log({ iframeUrl })
   return (
     <div style={{ width: '100%' }}>
       <iframe title={'Decentraland Renderer'} id={'previewFrame'} src={iframeUrl} width="100%" height="100%"></iframe>

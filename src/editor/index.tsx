@@ -1,14 +1,15 @@
-import { useState, useEffect, useCallback } from 'react'
-import Editor, { OnChange, OnMount, OnValidate } from '@monaco-editor/react'
-
-import Preview from '../preview'
-import { defaultValue } from './codePlaceholder'
-
+import { Button, Dropdown, HeaderMenu } from 'decentraland-ui'
 import { Buffer } from 'buffer'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import * as monacoType from 'monaco-editor/esm/vs/editor/editor.api'
+import MonacoEditor, { OnChange, OnMount, OnValidate } from '@monaco-editor/react'
+
+import { getBranchFromQueryParams, getBundle } from '../utils/bundle'
+import getDefaultCode from '../utils/default-code'
+import PreviewScene from '../preview/scene'
+import PreviewUi from '../preview/ui'
 
 import './editor.css'
-import { getEcsTypes, getGameJsTemplate } from '../ecs'
-import { transformCode } from '../preview/execute-code'
 
 function debounce<F extends (...params: any[]) => void>(fn: F, delay: number) {
   let timeoutID: NodeJS.Timeout | null = null
@@ -18,12 +19,30 @@ function debounce<F extends (...params: any[]) => void>(fn: F, delay: number) {
   } as F
 }
 
+type Tab = 'ui' | 'scene'
+
+function updateUrl(url: string | URL) {
+  window.history.replaceState(null, '', url)
+}
+
+function getFilesUri(monaco: typeof monacoType) {
+  return {
+    ts: monaco.Uri.parse('file:///game.tsx'),
+    types: monaco.Uri.parse('file:///index.d.ts')
+  }
+}
+
 function EditorComponent() {
+  const isMounted = useRef(false)
+  const [code, setCode] = useState<string>('')
+  const [tab, setTab] = useState<Tab>('ui')
   const [previewJsCode, setPreviewJsCode] = useState('')
   const [error, setError] = useState(false)
-  const [code, setCode] = useState<string>('')
+  const [monaco, setMonaco] = useState<typeof monacoType>()
 
   const handleEditorDidMount: OnMount = async (editor, monaco) => {
+    setMonaco(monaco)
+
     monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
       target: monaco.languages.typescript.ScriptTarget.ES2016,
       allowNonTsExtensions: true,
@@ -31,26 +50,58 @@ function EditorComponent() {
       module: monaco.languages.typescript.ModuleKind.CommonJS,
       noEmit: true,
       typeRoots: ['node_modules/@types'],
-      jsx: monaco.languages.typescript.JsxEmit.React,
-      jsxFactory: 'React.createElement'
+      jsx: monaco.languages.typescript.JsxEmit.Preserve,
+      jsxFactory: 'ReactEcs.createElement'
     })
 
-    // Get the code copied
-    const base64Code = new URLSearchParams(document.location.search).get('code') || ''
-    const code = base64Code ? Buffer.from(base64Code, 'base64').toString('utf8') : defaultValue
+    // TODO: getBranchFromQueryParams should be selected by the user with some UI
+    const bundle = await getBundle(tab, getBranchFromQueryParams())
+    const code = getDefaultCode(tab)
+    const fileUris = getFilesUri(monaco)
 
-    // Clean the URL
-    // const newURL = document.location.href.split('?')[0]
-    // window.history.pushState('object', document.title, newURL)
+    editor.setModel(monaco.editor.createModel(code, 'typescript', fileUris.ts))
+    monaco.editor.createModel(bundle.types, 'typescript', fileUris.types)
+    isMounted.current = true
+    setCode(code)
+  }
 
-    editor.setModel(monaco.editor.createModel(code, 'typescript', monaco.Uri.parse('file:///game.ts')))
-    const ecsType = await getEcsTypes()
-    monaco.editor.createModel(ecsType, 'typescript', monaco.Uri.parse('file:///index.d.ts'))
-    setCode(editor.getValue())
+  async function handleChangeTab(nextTab: Tab) {
+    if (tab === nextTab) return
+    setTab(nextTab)
+  }
+
+  useEffect(() => {
+    async function updateEditor() {
+      if (!monaco || !isMounted.current) return
+      const fileUris = getFilesUri(monaco)
+
+      const bundle = await getBundle(tab, getBranchFromQueryParams())
+      const code = getDefaultCode(tab)
+      monaco.editor.getModel(fileUris.ts)?.setValue(code)
+      monaco.editor.getModel(fileUris.types)?.setValue(bundle.types)
+    }
+    void updateEditor()
+  }, [tab, monaco])
+
+  async function handleCopyURL() {
+    if (!monaco) return
+    const url = new URL(document.location.href)
+    const fileUris = getFilesUri(monaco)
+    const code = monaco.editor.getModel(fileUris.ts)?.getValue() || ''
+    const encodedCode = Buffer.from(code, 'utf8').toString('base64')
+
+    url.searchParams.set('code', encodedCode)
+    updateUrl(url)
+    await navigator.clipboard.writeText(url.toString())
+  }
+
+  function handleClickRun() {
+    if (error) return
+    setPreviewJsCode(previewJsCode + ' ')
   }
 
   const handleChange: OnChange = async (value) => {
-    if (value) setCode(value)
+    setCode(value || '')
   }
 
   const onValidate: OnValidate = async (markers) => {
@@ -62,12 +113,11 @@ function EditorComponent() {
   const renderPreview = useCallback(
     debounce(async (code, error) => {
       if (error) {
-        return console.log('error transpiling')
+        return console.log('error')
       }
-      const compiledCode = await transformCode(code)
-      const gameJsTemplate = await getGameJsTemplate()
-      setPreviewJsCode(gameJsTemplate + (';' + compiledCode))
-    }, 500),
+
+      setPreviewJsCode(code)
+    }, 1000),
     []
   )
 
@@ -75,34 +125,48 @@ function EditorComponent() {
     void renderPreview(code, error)
   }, [error, code, renderPreview])
 
-  async function handleCopyURL() {
-    const url = new URL(document.location.href)
-    const encodedCode = Buffer.from(code!, 'utf8').toString('base64')
-    url.searchParams.set('code', encodedCode)
-    await navigator.clipboard.writeText(url.toString())
-  }
-
-  function handleClickRun() {
-    setPreviewJsCode(previewJsCode + ' ')
-  }
-
   return (
-    <div className="Editor">
+    <div className="editor">
       <div className="editor-wrapper">
         <div className="editor-buttons">
-          <button onClick={handleCopyURL}>Copy URL</button>
-          <button onClick={handleClickRun}>Run</button>
+          <HeaderMenu>
+            <HeaderMenu.Left>
+              <div className="ui-dropdown">
+                <Dropdown text={tab} direction="right">
+                  <Dropdown.Menu>
+                    <Dropdown.Item onClick={() => handleChangeTab('scene')} text="Scene" value="scene" />
+                    <Dropdown.Item onClick={() => handleChangeTab('ui')} text="UI" value="ui" />
+                  </Dropdown.Menu>
+                </Dropdown>
+              </div>
+            </HeaderMenu.Left>
+            <HeaderMenu.Right>
+              <div>
+                <Button size="small" inverted primary onClick={handleCopyURL}>
+                  Share
+                </Button>
+              </div>
+              <div>
+                <Button size="small" inverted primary onClick={handleClickRun}>
+                  Run
+                </Button>
+              </div>
+            </HeaderMenu.Right>
+          </HeaderMenu>
         </div>
-        <Editor
+        <MonacoEditor
           defaultLanguage="typescript"
           theme="vs-dark"
           onMount={handleEditorDidMount}
           onChange={handleChange}
           onValidate={onValidate}
+          options={{ minimap: { enabled: false } }}
         />
       </div>
-
-      <Preview compiledCode={previewJsCode} />
+      <div className="preview">
+        {tab === 'scene' && <PreviewScene code={previewJsCode} />}
+        {tab === 'ui' && <PreviewUi code={previewJsCode} />}
+      </div>
     </div>
   )
 }
