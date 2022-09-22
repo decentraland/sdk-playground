@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - preview
+      - main
 
 name: Upload to Github Pages
 jobs:
