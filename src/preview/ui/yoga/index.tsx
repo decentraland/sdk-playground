@@ -69,8 +69,6 @@ export const YogaJsx: React.FC<Partial<PropTypes>> = (props) => {
 
         if (pos === 'left' || pos === 'top' || pos === 'right' || pos === 'bottom') {
           try {
-            node.setPaddingPercent(Yoga.EDGE_TOP, 10)
-            console.log(toYogaSetProp(key), yogaDirection, value[pos])
             ;(node[toYogaSetProp(key)] as typeof node.setPosition)(yogaDirection, value[pos])
           } catch (e) {
             console.log(e, typedKey, value)

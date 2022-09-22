@@ -62,6 +62,7 @@ function EditorComponent() {
     editor.setModel(monaco.editor.createModel(code, 'typescript', fileUris.ts))
     monaco.editor.createModel(bundle.types, 'typescript', fileUris.types)
     isMounted.current = true
+    setCode(code)
   }
 
   async function handleChangeTab(nextTab: Tab) {
