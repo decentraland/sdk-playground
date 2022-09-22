@@ -18,17 +18,19 @@ export async function transformCode(codeString: string, dependencies?: Record<st
   const ecsUI =
     YogaTypings +
     `
-  import { YogaJsx as DivUi } from 'yoga-jsx'
+  import { YogaJsx } from 'yoga-jsx'
   import Yoga from 'yoga-layout-prebuilt'
   import React, { Children } from 'react'
 
   function UiEntity(props) {
-    return <DivUi {...props.uiTransform} span={props.uiText?.value} styles={props.uiStyles}>
-      {Children.map(props.children, children => {
-        return UiEntity(children.props)
-      })}
-    </DivUi>
+    return <YogaJsx {...props} />
   }
+
+  // TODO: define here extra components.
+  function Container(props) {
+    return <YogaJsx  />
+  }
+
   `
   const codeWithUi = ecsUI + codeReactString
   const transformedCode = await compile(codeWithUi)

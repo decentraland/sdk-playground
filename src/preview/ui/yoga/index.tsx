@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
-import Yoga from 'yoga-layout-prebuilt'
+import { Font, TextAlign, EntityPropTypes } from '@dcl/react-ecs'
+import Yoga, { DIRECTION_INHERIT } from 'yoga-layout-prebuilt'
 
-import { defaultLayout, YogaProps, PositionTypes, defaultPositionLayout } from './layout'
+import { defaultLayout, PositionTypes, defaultPositionLayout } from './layout'
+import { toColor3, toColor4 } from './utils'
 
 type ComputedLayout = {
   left: number
@@ -23,13 +25,11 @@ type StyleProps = {
   backgroundColor: Color4
 }
 
-interface PropTypes extends YogaProps {
+interface PropTypes extends EntityPropTypes {
   children: React.ReactNode
-  span: string
-  styles?: StyleProps
+  uiStyles?: StyleProps
   isRootNode?: boolean
   computedLayout?: ComputedLayout
-  parent?: string
 }
 
 function toYogaSetProp(value: string): keyof Yoga.YogaNode {
@@ -42,24 +42,24 @@ export const YogaJsx: React.FC<Partial<PropTypes>> = (props) => {
 
   if (!props) return null
 
-  function createYogaNodes(props: Partial<PropTypes>): Yoga.YogaNode {
+  function createYogaNodes(nextProps: Partial<PropTypes>): Yoga.YogaNode {
     const node = Yoga.Node.create()
-    if (!props) return node
+    if (!nextProps.uiTransform) return node
     const layout = defaultLayout()
     for (const key in layout) {
       try {
-        const propKey = (props as any)[key]
+        const propKey = (nextProps.uiTransform as any)[key]
         const value = propKey ?? (layout as any)[key]
         ;(node as any)[toYogaSetProp(key)](value)
       } catch (e) {
-        console.log(e, key, { props })
+        console.log(e, key, { uiTransform: nextProps.uiTransform })
       }
     }
 
     const defaultPosition = defaultPositionLayout()
     for (const key in defaultPosition) {
       const typedKey: PositionTypes = key as PositionTypes
-      const value = props[typedKey]
+      const value = nextProps.uiTransform[typedKey]
 
       if (!value) continue
 
@@ -78,7 +78,7 @@ export const YogaJsx: React.FC<Partial<PropTypes>> = (props) => {
     }
 
     node.setDisplay(Yoga.DISPLAY_FLEX)
-    const children = React.Children.toArray(props.children)
+    const children = React.Children.toArray(nextProps.children)
     children
       .map((children) => createYogaNodes((children as any).props))
       .forEach((children, index) => node.insertChild(children, index))
@@ -97,7 +97,7 @@ export const YogaJsx: React.FC<Partial<PropTypes>> = (props) => {
     if (props.computedLayout) return undefined
     const root = createYogaNodes(props)
     setNode(root)
-    root.calculateLayout(props.width as number, props.height as number, props.direction)
+    root.calculateLayout(props.uiTransform?.width as number, props.uiTransform?.height as number, DIRECTION_INHERIT)
     const layout = getComputedLayout(root)
     setLayout(layout)
   }
@@ -107,12 +107,26 @@ export const YogaJsx: React.FC<Partial<PropTypes>> = (props) => {
     return (children[index] as any).props as Partial<PropTypes>
   }
 
-  function prepareStyles() {
-    if (!props.styles) return {}
-    const { backgroundColor } = props.styles
-    return {
-      backgroundColor: `rgba(${backgroundColor.r}, ${backgroundColor.g}, ${backgroundColor.b}, ${backgroundColor.a})`
+  function prepareUiStyles() {
+    if (!props.uiStyles) return {}
+    const { backgroundColor } = props.uiStyles
+    const styles = {
+      backgroundColor: backgroundColor && toColor4(backgroundColor)
     }
+    return styles
+  }
+
+  function prepareTextStyles() {
+    if (!props.uiText) return {}
+    const { value, font, color, fontSize, textAlign, ...extraProps } = props.uiText
+    const styles = {
+      ...extraProps,
+      font: font && Font[font],
+      color: color && toColor3(color),
+      fontSize: fontSize,
+      textAlign: textAlign !== undefined && TextAlign[textAlign]
+    }
+    return styles
   }
 
   const layout = props.computedLayout || computedLayout || calculateLayout()!
@@ -124,10 +138,10 @@ export const YogaJsx: React.FC<Partial<PropTypes>> = (props) => {
     ? { width, height, position: 'static' as const }
     : { width, height, top, left, position: 'absolute' as const }
   return (
-    <div style={{ ...divStyle, ...prepareStyles() }}>
-      {props.span || ''}
+    <div style={{ ...divStyle, ...prepareUiStyles(), ...prepareTextStyles() }}>
+      {props.uiText?.value || ''}
       {(children || []).map((children, index) => (
-        <YogaJsx key={index} computedLayout={children} parent={props.span} {...getChildProps(index)} />
+        <YogaJsx key={index} computedLayout={children} {...getChildProps(index)} />
       ))}
     </div>
   )
