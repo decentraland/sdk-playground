@@ -1,30 +1,28 @@
-export const scene = `function createCube(x: number, y: number, z: number, spawner = true): Entity {
-  const entity = engine.addEntity()
-
-  Transform.create(entity, {
-    position: { x, y, z },
-    scale: { x: 1, y: 1, z: 1 },
-    rotation: { x: 0, y: 0, z: 0, w: 1 }
-  })
-
-  BoxShape.create(entity, {
-    withCollisions: true,
-    isPointerBlocker: true,
-    visible: true,
-    uvs: []
-  })
-
+export const scene = `// Cube factory
+function createCube(x: number, y: number, z: number, spawner = true): Entity {
+  const meshEntity = engine.addEntity()
+  Transform.create(meshEntity, { position: { x, y, z } })
+  MeshRenderer.create(meshEntity, { box: { uvs: [] } })
+  MeshCollider.create(meshEntity, { box: {} })
   if (spawner) {
-    OnPointerDown.create(entity, {
-      button: 1,
-      hoverText: 'Press E to spawn',
-      maxDistance: 100,
-      showFeedback: true
+    PointerEvents.create(meshEntity, {
+      pointerEvents: [
+        {
+          eventType: PointerEventType.DOWN,
+          eventInfo: {
+            button: ActionButton.PRIMARY,
+            hoverText: 'Press E to spawn',
+            maxDistance: 100,
+            showFeedback: true
+          }
+        }
+      ]
     })
   }
-  return entity
+  return meshEntity
 }
 
+// Systems
 function circularSystem(dt: number) {
   const entitiesWithBoxShapes = engine.getEntitiesWith(BoxShape, Transform)
   for (const [entity, _boxShape, _transform] of entitiesWithBoxShapes) {
@@ -38,14 +36,21 @@ function circularSystem(dt: number) {
 }
 
 function spawnerSystem() {
-  const clickedCubes = engine.getEntitiesWith(OnPointerDownResult)
-  for (const [_entity, _cube] of clickedCubes) {
-    createCube(Math.random() * 8 + 1, Math.random() * 8, Math.random() * 8 + 1, false)
+  const clickedCubes = engine.getEntitiesWith(PointerEvents)
+  for (const [entity] of clickedCubes) {
+    if (wasEntityClicked(entity, ActionButton.PRIMARY)) {
+      createCube(
+        1 + Math.random() * 8,
+        Math.random() * 8,
+        1 + Math.random() * 8,
+        false
+      )
+    }
   }
 }
 
-
-const mainCube = createCube(8, 1, 8)
+// Init
+createCube(8, 1, 8)
 engine.addSystem(circularSystem)
 engine.addSystem(spawnerSystem)
 `
