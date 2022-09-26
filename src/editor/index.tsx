@@ -1,36 +1,16 @@
 import { Button, Dropdown, HeaderMenu } from 'decentraland-ui'
 import { Buffer } from 'buffer'
 import { useState, useEffect, useCallback, useRef } from 'react'
-import * as monacoType from 'monaco-editor/esm/vs/editor/editor.api'
 import MonacoEditor, { OnChange, OnMount, OnValidate } from '@monaco-editor/react'
 
 import { getBranchFromQueryParams, getBundle } from '../utils/bundle'
 import getDefaultCode from '../utils/default-code'
 import PreviewScene from '../preview/scene'
 import PreviewUi from '../preview/ui'
+import { IMonaco, Tab } from './types'
 
 import './editor.css'
-
-function debounce<F extends (...params: any[]) => void>(fn: F, delay: number) {
-  let timeoutID: NodeJS.Timeout | null = null
-  return function (this: any, ...args: any[]) {
-    timeoutID && clearTimeout(timeoutID)
-    timeoutID = setTimeout(() => fn.apply(this, args), delay)
-  } as F
-}
-
-type Tab = 'ui' | 'scene'
-
-function updateUrl(url: string | URL) {
-  window.history.replaceState(null, '', url)
-}
-
-function getFilesUri(monaco: typeof monacoType) {
-  return {
-    ts: monaco.Uri.parse('file:///game.tsx'),
-    types: monaco.Uri.parse('file:///index.d.ts')
-  }
-}
+import { getFilesUri, updateUrl, debounce, monacoConfig } from './utils'
 
 function EditorComponent() {
   const isMounted = useRef(false)
@@ -38,21 +18,12 @@ function EditorComponent() {
   const [tab, setTab] = useState<Tab>('ui')
   const [previewJsCode, setPreviewJsCode] = useState('')
   const [error, setError] = useState(false)
-  const [monaco, setMonaco] = useState<typeof monacoType>()
+  const [monaco, setMonaco] = useState<IMonaco>()
 
   const handleEditorDidMount: OnMount = async (editor, monaco) => {
     setMonaco(monaco)
 
-    monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-      target: monaco.languages.typescript.ScriptTarget.ES2016,
-      allowNonTsExtensions: true,
-      moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-      module: monaco.languages.typescript.ModuleKind.CommonJS,
-      noEmit: true,
-      typeRoots: ['node_modules/@types'],
-      jsx: monaco.languages.typescript.JsxEmit.Preserve,
-      jsxFactory: 'ReactEcs.createElement'
-    })
+    monaco.languages.typescript.typescriptDefaults.setCompilerOptions(monacoConfig(monaco))
 
     // TODO: getBranchFromQueryParams should be selected by the user with some UI
     const bundle = await getBundle(tab, getBranchFromQueryParams())
