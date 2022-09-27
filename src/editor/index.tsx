@@ -1,88 +1,62 @@
 import { Button, Dropdown, HeaderMenu } from 'decentraland-ui'
 import { Buffer } from 'buffer'
 import { useState, useEffect, useCallback, useRef } from 'react'
-import * as monacoType from 'monaco-editor/esm/vs/editor/editor.api'
 import MonacoEditor, { OnChange, OnMount, OnValidate } from '@monaco-editor/react'
 
-import { getBranchFromQueryParams, getBundle } from '../utils/bundle'
-import getDefaultCode from '../utils/default-code'
 import PreviewScene from '../preview/scene'
 import PreviewUi from '../preview/ui'
+import Samples from '../samples'
+import { getBranchFromQueryParams, getBundle, getSnippetFile } from '../utils/bundle'
+import getDefaultCode from '../utils/default-code'
+import { PackagesData, SnippetInfo } from '../utils/bundle/types'
+import { IMonaco, Tab } from './types'
+import { getFilesUri, updateUrl, debounce, monacoConfig } from './utils'
 
 import './editor.css'
-
-function debounce<F extends (...params: any[]) => void>(fn: F, delay: number) {
-  let timeoutID: NodeJS.Timeout | null = null
-  return function (this: any, ...args: any[]) {
-    timeoutID && clearTimeout(timeoutID)
-    timeoutID = setTimeout(() => fn.apply(this, args), delay)
-  } as F
-}
-
-type Tab = 'ui' | 'scene'
-
-function updateUrl(url: string | URL) {
-  window.history.replaceState(null, '', url)
-}
-
-function getFilesUri(monaco: typeof monacoType) {
-  return {
-    ts: monaco.Uri.parse('file:///game.tsx'),
-    types: monaco.Uri.parse('file:///index.d.ts')
-  }
-}
 
 function EditorComponent() {
   const isMounted = useRef(false)
   const [code, setCode] = useState<string>('')
+  const [showExamples, setShowExamples] = useState<boolean>(false)
   const [tab, setTab] = useState<Tab>('ui')
   const [previewJsCode, setPreviewJsCode] = useState('')
   const [error, setError] = useState(false)
-  const [monaco, setMonaco] = useState<typeof monacoType>()
+  const [monaco, setMonaco] = useState<IMonaco>()
+  const [bundle, setBundle] = useState<PackagesData>()
 
   const handleEditorDidMount: OnMount = async (editor, monaco) => {
-    setMonaco(monaco)
-
-    monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-      target: monaco.languages.typescript.ScriptTarget.ES2016,
-      allowNonTsExtensions: true,
-      moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-      module: monaco.languages.typescript.ModuleKind.CommonJS,
-      noEmit: true,
-      typeRoots: ['node_modules/@types'],
-      jsx: monaco.languages.typescript.JsxEmit.Preserve,
-      jsxFactory: 'ReactEcs.createElement'
-    })
-
     // TODO: getBranchFromQueryParams should be selected by the user with some UI
-    const bundle = await getBundle(tab, getBranchFromQueryParams())
+    const bundle = await getBundle(getBranchFromQueryParams())
     const code = getDefaultCode(tab)
     const fileUris = getFilesUri(monaco)
 
+    monaco.languages.typescript.typescriptDefaults.setCompilerOptions(monacoConfig(monaco))
     editor.setModel(monaco.editor.createModel(code, 'typescript', fileUris.ts))
-    monaco.editor.createModel(bundle.types, 'typescript', fileUris.types)
+    monaco.editor.createModel(bundle.scene.types + bundle.ui.types, 'typescript', fileUris.types)
     isMounted.current = true
+    setMonaco(monaco)
     setCode(code)
+    setBundle(bundle)
   }
 
   async function handleChangeTab(nextTab: Tab) {
     if (tab === nextTab) return
-    setTab(nextTab)
+    updateEditor(nextTab)
   }
 
-  useEffect(() => {
-    async function updateEditor() {
-      if (!monaco || !isMounted.current) return
-      updateUrl(new URL(document.location.href))
-      const fileUris = getFilesUri(monaco)
+  function updateEditor(tab: Tab, sample?: string) {
+    setTab(tab)
+    if (!monaco || !isMounted.current || !bundle) return
 
-      const bundle = await getBundle(tab, getBranchFromQueryParams())
-      const code = getDefaultCode(tab)
-      monaco.editor.getModel(fileUris.ts)?.setValue(code)
-      monaco.editor.getModel(fileUris.types)?.setValue(bundle.types)
-    }
-    void updateEditor()
-  }, [tab, monaco])
+    updateUrl(new URL(document.location.href))
+    const fileUris = getFilesUri(monaco)
+
+    const code = sample || getDefaultCode(tab)
+    monaco.editor.getModel(fileUris.ts)?.setValue(code)
+
+    setCode(code)
+    setShowExamples(false)
+  }
 
   async function handleCopyURL() {
     if (!monaco) return
@@ -99,6 +73,12 @@ function EditorComponent() {
   function handleClickRun() {
     if (error) return
     setPreviewJsCode(previewJsCode + ' ')
+  }
+
+  async function handleClickSnippet(snippet: SnippetInfo) {
+    const snippetCode = await getSnippetFile(snippet.path)
+    if (!monaco || !bundle) return
+    updateEditor('scene', snippetCode)
   }
 
   const handleChange: OnChange = async (value) => {
@@ -140,6 +120,15 @@ function EditorComponent() {
                   </Dropdown.Menu>
                 </Dropdown>
               </div>
+              <div className="ui-dropdown">
+                <Dropdown
+                  selectOnBlur={false}
+                  closeOnBlur={false}
+                  text="Examples"
+                  onOpen={() => setShowExamples(true)}
+                  onClose={() => setShowExamples(false)}
+                />
+              </div>
             </HeaderMenu.Left>
             <HeaderMenu.Right>
               <div>
@@ -155,17 +144,20 @@ function EditorComponent() {
             </HeaderMenu.Right>
           </HeaderMenu>
         </div>
-        <MonacoEditor
-          defaultLanguage="typescript"
-          theme="vs-dark"
-          onMount={handleEditorDidMount}
-          onChange={handleChange}
-          onValidate={onValidate}
-          options={{ minimap: { enabled: false } }}
-        />
+        {showExamples && bundle && <Samples snippets={bundle.snippetInfo} onClick={handleClickSnippet} />}
+        <div className={`ui-monaco-editor ${showExamples ? 'hide' : ''}`}>
+          <MonacoEditor
+            defaultLanguage="typescript"
+            theme="vs-dark"
+            onMount={handleEditorDidMount}
+            onChange={handleChange}
+            onValidate={onValidate}
+            options={{ minimap: { enabled: false } }}
+          />
+        </div>
       </div>
       <div className="preview">
-        {tab === 'scene' && <PreviewScene code={previewJsCode} />}
+        <PreviewScene code={previewJsCode} show={tab === 'scene'} />
         {tab === 'ui' && <PreviewUi code={previewJsCode} />}
       </div>
     </div>
