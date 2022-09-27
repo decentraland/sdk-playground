@@ -1,0 +1,28 @@
+.categories {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.ui-samples > div {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  padding: 38px;
+}
+
+.categories .category {
+  width: 240px;
+}
+
+.categories .category > div {
+  font-weight: 600;
+  margin: 16px 0;
+}
+
+.ui-samples .category .card {
+  padding: 8px;
+  color: var(--primary);
+  cursor: pointer;
+  padding-left: 0;
+  font-weight: 600;
+}

@@ -1,30 +1,4 @@
-type ListOfURL = {
-  amdJsUrl: string
-  ecs7IndexJsUrl: string
-  ecs7IndexDTsUrl: string
-  snippetsInfoJsonUrl: string
-  snippetsBaseUrl: string
-  reactEcs7IndexJsUrl: string
-  reactEcs7IndexDTsUrl: string
-}
-
-type Bundle = {
-  js: string
-  types: string
-}
-
-type SnippetInfoJson = {
-  content: {
-    path: string
-  }[]
-}
-
-type PackagesData = {
-  scene: Bundle
-  ui: Bundle
-  snippetInfo: SnippetInfoJson
-  urls: ListOfURL
-}
+import { PackagesData, ListOfURL, SnippetInfo } from './types'
 
 const cache: Map<string, PackagesData> = new Map()
 
@@ -53,7 +27,17 @@ function getS3OrUnpacked(version: string) {
   }
 }
 
-export function getUrls(version: string): ListOfURL {
+export async function getSnippetFile(snippetFilename: string) {
+  const version = getBranchFromQueryParams()
+  const source = getS3OrUnpacked(version)
+  const url = source.s3
+    ? `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${source.s3}/playground/snippets/${snippetFilename}`
+    : `https://unpkg.com/@dcl/amd@${version}/snippets/${snippetFilename}`
+
+  return (await fetch(url)).text()
+}
+
+function getUrls(version: string): ListOfURL {
   const source = getS3OrUnpacked(version)
   if (source.s3) {
     const baseUrl = `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${source.s3}/playground`
@@ -84,7 +68,7 @@ export function getUrls(version: string): ListOfURL {
  * @param version
  * @returns
  */
-export async function getPackagesData(version: string): Promise<PackagesData> {
+async function getPackagesData(version: string): Promise<PackagesData> {
   if (cache.get(version)) {
     return cache.get(version)!
   }
@@ -106,14 +90,14 @@ export async function getPackagesData(version: string): Promise<PackagesData> {
 
     const ret: PackagesData = {
       scene: {
-        js: amdJs + ';\n' + ecs7IndexJs + ';\n',
+        js: amdJs + ';\n' + reactEcs7IndexJs + ';\n' + ecs7IndexJs + ';\n',
         types: ecs7IndexDTs
       },
       ui: {
         js: reactEcs7IndexJs,
         types: reactEcs7IndexDTs
       },
-      snippetInfo: snippetsInfoJson as SnippetInfoJson,
+      snippetInfo: snippetsInfoJson as SnippetInfo[],
       urls
     }
     cache.set(version, ret)
@@ -135,19 +119,15 @@ export async function getPackagesData(version: string): Promise<PackagesData> {
 
 /**
  * Get the bundle(js and types) depending on the type of editor.
- * @param type 'ui' or 'scene'
  * @returns return the js code and its types
  */
-export async function getBundle(type: 'ui' | 'scene', version: string = 'latest'): Promise<Bundle> {
-  if (type === 'ui') {
-    return getPackagesData(version).then((res) => res.ui)
-  }
-
-  return getPackagesData(version).then((res) => res.scene)
+export async function getBundle(version: string = 'latest'): Promise<PackagesData> {
+  return getPackagesData(version)
 }
 
 export function getBranchFromQueryParams() {
   const params = new URLSearchParams(document.location.search)
   return params.get('sdk-branch') || 'main'
 }
+
 getPackagesData(getBranchFromQueryParams()).then(console.log).catch(console.error)

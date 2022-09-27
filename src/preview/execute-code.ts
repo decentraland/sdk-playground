@@ -1,5 +1,5 @@
 import { transformSync } from '@swc/wasm-web'
-import { getBranchFromQueryParams, getPackagesData } from '../utils/bundle'
+import { getBranchFromQueryParams, getBundle } from '../utils/bundle'
 
 let swc: { transformSync: typeof transformSync }
 
@@ -10,7 +10,7 @@ export async function compile(codeString: string) {
     swc = module
   }
 
-  const code = (await getPackagesData(getBranchFromQueryParams())).scene.types + codeString
+  const code = (await getBundle(getBranchFromQueryParams())).scene.types + codeString
   return swc.transformSync(code, {
     filename: 'index.tsx',
     jsc: {

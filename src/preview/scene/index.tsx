@@ -1,18 +1,31 @@
-import { useEffect } from 'react'
-import { getBranchFromQueryParams, getPackagesData } from '../../utils/bundle'
+import { useEffect, useRef, useState } from 'react'
+import { getBranchFromQueryParams, getBundle } from '../../utils/bundle'
 import { compile } from '../execute-code'
 import { patchPreviewWindow } from './monkeyPatch'
 
 interface PropTypes {
   code: string
+  show: boolean
 }
 
-function Preview({ code }: PropTypes) {
+function Preview({ code, show }: PropTypes) {
+  const isMounted = useRef(false)
+  const [startFrame, setStartFrame] = useState<boolean>(false)
+
+  useEffect(() => {
+    isMounted.current = true
+  }, [])
+
+  useEffect(() => {
+    if (!isMounted.current || !show) return
+    setStartFrame(true)
+  }, [show])
+
   useEffect(() => {
     async function compileCode() {
-      if (code) {
+      if (code && show) {
         const compiledCode = await compile(code)
-        const gameJsTemplate = (await getPackagesData(getBranchFromQueryParams())).scene.js
+        const gameJsTemplate = (await getBundle(getBranchFromQueryParams())).scene.js
         const previewCode = gameJsTemplate + (';' + compiledCode)
         const frameElement = document.getElementById('previewFrame')
         const tmpFrameWindow = (frameElement as any)?.contentWindow
@@ -27,24 +40,19 @@ function Preview({ code }: PropTypes) {
     compileCode().catch((e) => {
       console.log(e)
     })
-  }, [code])
+  }, [code, show])
 
   const frameElement = document.getElementById('previewFrame')
   const tmpFrameWindow = (frameElement as any)?.contentWindow
-  if (tmpFrameWindow) {
-    if (tmpFrameWindow.startKernel) {
-      if (tmpFrameWindow.kernelStarted) {
-      } else {
-        tmpFrameWindow.kernelStarted = true
-        patchPreviewWindow(tmpFrameWindow)
-          .then(() => {
-            tmpFrameWindow.startKernel()
-          })
-          .catch((err) => {
-            console.error(err)
-          })
-      }
-    }
+  if (tmpFrameWindow?.startKernel && !tmpFrameWindow.kernelStarted) {
+    tmpFrameWindow.kernelStarted = true
+    patchPreviewWindow(tmpFrameWindow)
+      .then(() => {
+        tmpFrameWindow.startKernel()
+      })
+      .catch((err) => {
+        console.error(err)
+      })
   }
 
   let iframeUrl = ''
@@ -59,11 +67,17 @@ function Preview({ code }: PropTypes) {
     } else {
       iframeUrl = `${urlPath}?${document.location.search}`
     }
-  } catch (err) {}
+  } catch (err) {
+    console.log(err)
+  }
+
+  if (!startFrame) return null
+
+  const showDisplay = show ? {} : { display: 'none' }
 
   return (
-    <div style={{ width: '100%' }}>
-      <iframe title={'Decentraland Renderer'} id={'previewFrame'} src={iframeUrl} width="100%" height="100%"></iframe>
+    <div style={{ width: '100%', ...showDisplay }}>
+      <iframe title="Decentraland Renderer" id="previewFrame" src={iframeUrl} width="100%" height="100%" />
     </div>
   )
 }
