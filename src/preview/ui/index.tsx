@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { transformCode } from './compile-ui'
+import compile from './compile'
 
 import './styles.css'
 
@@ -14,7 +14,7 @@ function Preview({ code }: PropTypes) {
   useEffect(() => {
     async function getPreview() {
       if (!code) return
-      const Preview = (await transformCode(code)) as React.FC
+      const Preview = (await compile(code)) as React.FC
       setPreview((<Preview />) as any)
     }
 

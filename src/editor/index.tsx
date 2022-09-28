@@ -18,7 +18,7 @@ function EditorComponent() {
   const isMounted = useRef(false)
   const [code, setCode] = useState<string>('')
   const [showExamples, setShowExamples] = useState<boolean>(false)
-  const [tab, setTab] = useState<Tab>('ui')
+  const [tab, setTab] = useState<Tab>('scene')
   const [previewJsCode, setPreviewJsCode] = useState('')
   const [error, setError] = useState(false)
   const [monaco, setMonaco] = useState<IMonaco>()

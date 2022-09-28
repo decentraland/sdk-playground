@@ -1,11 +1,11 @@
 import React from 'react'
 import Yoga from 'yoga-layout-prebuilt'
 
-import { compile } from '../execute-code'
+import { compileUi } from '../swc-compile'
 import * as YogaJsx from './yoga'
 import { YogaTypings } from './yoga/types'
 
-export async function transformCode(codeString: string, dependencies?: Record<string, unknown>) {
+export default async function transformCode(codeString: string, dependencies?: Record<string, unknown>) {
   const mergedDependencies: Record<string, unknown> = {
     ...(dependencies || {}),
     'yoga-jsx': YogaJsx,
@@ -33,7 +33,7 @@ export async function transformCode(codeString: string, dependencies?: Record<st
 
   `
   const codeWithUi = ecsUI + codeReactString
-  const transformedCode = await compile(codeWithUi)
+  const transformedCode = await compileUi(codeWithUi)
   const exports: Record<string, unknown> = {}
   const require = (path: string) => {
     if (mergedDependencies[path]) {

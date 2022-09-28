@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getBranchFromQueryParams, getBundle } from '../../utils/bundle'
-import { compile } from '../execute-code'
+import { compileScene } from '../swc-compile'
 import { patchPreviewWindow } from './monkeyPatch'
 
 interface PropTypes {
@@ -24,8 +24,10 @@ function Preview({ code, show }: PropTypes) {
   useEffect(() => {
     async function compileCode() {
       if (code && show) {
-        const compiledCode = await compile(code)
-        const gameJsTemplate = (await getBundle(getBranchFromQueryParams())).scene.js
+        const { scene } = await getBundle(getBranchFromQueryParams())
+        const compiledCode = await compileScene(scene.types + code)
+        console.log(compiledCode)
+        const gameJsTemplate = scene.js
         const previewCode = gameJsTemplate + (';' + compiledCode)
         const frameElement = document.getElementById('previewFrame')
         const tmpFrameWindow = (frameElement as any)?.contentWindow
