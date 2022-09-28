@@ -26,7 +26,6 @@ function Preview({ code, show }: PropTypes) {
       if (code && show) {
         const { scene } = await getBundle(getBranchFromQueryParams())
         const compiledCode = await compileScene(scene.types + code)
-        console.log(compiledCode)
         const gameJsTemplate = scene.js
         const previewCode = gameJsTemplate + (';' + compiledCode)
         const frameElement = document.getElementById('previewFrame')
