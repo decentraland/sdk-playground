@@ -90,7 +90,7 @@ async function getPackagesData(version: string): Promise<PackagesData> {
 
     const ret: PackagesData = {
       scene: {
-        js: amdJs + ';\n' + reactEcs7IndexJs + ';\n' + ecs7IndexJs + ';\n',
+        js: amdJs + ';\n' + ecs7IndexJs + ';\n' + reactEcs7IndexJs + ';\n',
         types: ecs7IndexDTs
       },
       ui: {
