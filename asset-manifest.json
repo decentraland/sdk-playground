@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/sdk-playground/static/css/main.33dd6350.css",
-    "main.js": "/sdk-playground/static/js/main.83cb82e4.js",
+    "main.css": "/sdk-playground/static/css/main.ae64f52b.css",
+    "main.js": "/sdk-playground/static/js/main.d20cbe6e.js",
     "static/js/205.1e1a1959.chunk.js": "/sdk-playground/static/js/205.1e1a1959.chunk.js",
     "static/media/wasm-web_bg.wasm": "/sdk-playground/static/media/wasm-web_bg.6a1c3ab563a2db20102c.wasm",
     "static/media/brand-icons.svg": "/sdk-playground/static/media/brand-icons.6729d29753e000c17489.svg",
@@ -21,12 +21,12 @@
     "static/media/outline-icons.woff": "/sdk-playground/static/media/outline-icons.ddae9b1ba9b0b42f5880.woff",
     "static/media/outline-icons.woff2": "/sdk-playground/static/media/outline-icons.687a4990ea22bb1a49d4.woff2",
     "index.html": "/sdk-playground/index.html",
-    "main.33dd6350.css.map": "/sdk-playground/static/css/main.33dd6350.css.map",
-    "main.83cb82e4.js.map": "/sdk-playground/static/js/main.83cb82e4.js.map",
+    "main.ae64f52b.css.map": "/sdk-playground/static/css/main.ae64f52b.css.map",
+    "main.d20cbe6e.js.map": "/sdk-playground/static/js/main.d20cbe6e.js.map",
     "205.1e1a1959.chunk.js.map": "/sdk-playground/static/js/205.1e1a1959.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.33dd6350.css",
-    "static/js/main.83cb82e4.js"
+    "static/css/main.ae64f52b.css",
+    "static/js/main.d20cbe6e.js"
   ]
 }
