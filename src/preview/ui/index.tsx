@@ -1,3 +1,4 @@
+import { Loader } from 'decentraland-ui'
 import React, { useEffect, useState } from 'react'
 import compile from './compile'
 
@@ -9,8 +10,6 @@ interface PropTypes {
 
 function Preview({ code }: PropTypes) {
   const [Preview, setPreview] = useState<any>()
-  const [error, setError] = useState('')
-
   useEffect(() => {
     async function getPreview() {
       if (!code) return
@@ -18,14 +17,14 @@ function Preview({ code }: PropTypes) {
       setPreview((<Preview />) as any)
     }
 
-    getPreview().catch((error) => setError(error.message))
+    getPreview().catch((error) => console.log(error.message))
   }, [code])
 
   return (
-    <div className="ui-preview-ui">
-      {error && <div>{error}</div>}
-      <div>{Preview ? Preview : 'loading'}</div>
-    </div>
+    <>
+      <Loader active={!Preview} size="massive" />
+      <div>{!!Preview && Preview}</div>
+    </>
   )
 }
 

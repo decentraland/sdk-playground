@@ -45,7 +45,6 @@ function EditorComponent() {
   }
 
   function updateEditor(tab: Tab, sample?: string) {
-    setTab(tab)
     if (!monaco || !isMounted.current || !bundle) return
 
     updateUrl(new URL(document.location.href))
@@ -55,7 +54,9 @@ function EditorComponent() {
     monaco.editor.getModel(fileUris.ts)?.setValue(code)
 
     setCode(code)
+    setPreviewJsCode('')
     setShowExamples(false)
+    setTab(tab)
   }
 
   async function handleCopyURL() {
@@ -96,7 +97,6 @@ function EditorComponent() {
       if (error) {
         return console.log('error')
       }
-
       setPreviewJsCode(code)
     }, 1000),
     []
@@ -120,11 +120,12 @@ function EditorComponent() {
                   </Dropdown.Menu>
                 </Dropdown>
               </div>
-              <div className="ui-dropdown">
+              <div className="ui-dropdown examples">
                 <Dropdown
                   selectOnBlur={false}
                   closeOnBlur={false}
                   text="Examples"
+                  open={showExamples}
                   onOpen={() => setShowExamples(true)}
                   onClose={() => setShowExamples(false)}
                 />
@@ -144,7 +145,7 @@ function EditorComponent() {
             </HeaderMenu.Right>
           </HeaderMenu>
         </div>
-        {showExamples && bundle && <Samples snippets={bundle.snippetInfo} onClick={handleClickSnippet} />}
+        {showExamples && bundle && <Samples snippets={bundle!.snippetInfo} onClick={handleClickSnippet} />}
         <div className={`ui-monaco-editor ${showExamples ? 'hide' : ''}`}>
           <MonacoEditor
             defaultLanguage="typescript"

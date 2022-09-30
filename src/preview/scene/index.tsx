@@ -1,3 +1,4 @@
+import { Loader } from 'decentraland-ui'
 import { useEffect, useRef, useState } from 'react'
 import { getBranchFromQueryParams, getBundle } from '../../utils/bundle'
 import { compileScene } from '../swc-compile'
@@ -11,9 +12,30 @@ interface PropTypes {
 function Preview({ code, show }: PropTypes) {
   const isMounted = useRef(false)
   const [startFrame, setStartFrame] = useState<boolean>(false)
+  const frameRef = useRef<HTMLIFrameElement>(null)
+  const [loading, setLoading] = useState<boolean>(true)
+
+  function getWindow() {
+    return frameRef.current?.contentWindow as any
+  }
+
+  function checkEngine() {
+    const window = getWindow()
+    const isReady = window?.globalStore?.getState()?.renderer?.engineReady
+
+    if (isReady) {
+      setLoading(false)
+      window.postMessage('sdk-playground-update')
+      return
+    }
+
+    setTimeout(checkEngine, 1000)
+  }
 
   useEffect(() => {
     isMounted.current = true
+    checkEngine()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -28,13 +50,10 @@ function Preview({ code, show }: PropTypes) {
         const compiledCode = await compileScene(scene.types + code)
         const gameJsTemplate = scene.js
         const previewCode = gameJsTemplate + (';' + compiledCode)
-        const frameElement = document.getElementById('previewFrame')
-        const tmpFrameWindow = (frameElement as any)?.contentWindow
-        if (tmpFrameWindow) {
-          tmpFrameWindow.PlaygroundCode = previewCode
-          setTimeout(() => {
-            tmpFrameWindow.postMessage('sdk-playground-update')
-          }, 10)
+        const window = getWindow()
+        if (window) {
+          window.PlaygroundCode = previewCode
+          window.postMessage('sdk-playground-update')
         }
       }
     }
@@ -74,12 +93,23 @@ function Preview({ code, show }: PropTypes) {
 
   if (!startFrame) return null
 
-  const showDisplay = show ? {} : { display: 'none' }
+  const showDisplay = show && !loading ? {} : { display: 'none' }
 
   return (
-    <div style={{ width: '100%', ...showDisplay }}>
-      <iframe title="Decentraland Renderer" id="previewFrame" src={iframeUrl} width="100%" height="100%" />
-    </div>
+    <>
+      <Loader active={loading} size="massive" style={!show ? { display: 'none' } : {}} />
+      <div style={{ width: '100%', ...showDisplay }}>
+        <iframe
+          style={{ width: '100%' }}
+          id="previewFrame"
+          ref={frameRef}
+          title="Decentraland Renderer"
+          src={iframeUrl}
+          width="100%"
+          height="100%"
+        />
+      </div>
+    </>
   )
 }
 

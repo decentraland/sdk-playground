@@ -1,3 +1,7 @@
+.loading {
+  display: none;
+}
+
 .editor {
   display: flex;
   height: 100vh;
@@ -5,6 +9,7 @@
 }
 
 .preview {
+  position: relative;
   width: 40%;
   height: 100vh;
 }
@@ -53,4 +58,8 @@
   border: 1px solid var(--primary);
   padding: 7px 20px;
   margin-left: 16px;
+}
+
+.ui-dropdown.examples .menu {
+  display: none !important;
 }
