@@ -101,6 +101,7 @@ function EditorComponent() {
         return console.log('error')
       }
       setPreviewTsCode(code)
+      saveCurrentCode(tab, code)
     }, 1000),
     []
   )
@@ -108,12 +109,6 @@ function EditorComponent() {
   useEffect(() => {
     void renderPreview(code, error)
   }, [error, code, renderPreview])
-
-  useEffect(() => {
-    if (previewTsCode !== '') {
-      saveCurrentCode(tab, previewTsCode)
-    }
-  }, [previewTsCode])
 
   return (
     <div className="editor">
