@@ -7,19 +7,20 @@ import PreviewScene from '../preview/scene'
 import PreviewUi from '../preview/ui'
 import Samples from '../samples'
 import { getBranchFromQueryParams, getBundle, getSnippetFile } from '../utils/bundle'
-import getDefaultCode from '../utils/default-code'
+import getDefaultCode, { saveCurrentCode } from '../utils/default-code'
 import { PackagesData, SnippetInfo } from '../utils/bundle/types'
 import { IMonaco, Tab } from './types'
 import { getFilesUri, updateUrl, debounce, monacoConfig } from './utils'
 
 import './editor.css'
+import { getGenesisPlazaContent } from '../utils/content'
 
 function EditorComponent() {
   const isMounted = useRef(false)
   const [code, setCode] = useState<string>('')
   const [showExamples, setShowExamples] = useState<boolean>(false)
   const [tab, setTab] = useState<Tab>('scene')
-  const [previewJsCode, setPreviewJsCode] = useState('')
+  const [previewTsCode, setPreviewTsCode] = useState('')
   const [error, setError] = useState(false)
   const [monaco, setMonaco] = useState<IMonaco>()
   const [bundle, setBundle] = useState<PackagesData>()
@@ -27,12 +28,14 @@ function EditorComponent() {
   const handleEditorDidMount: OnMount = async (editor, monaco) => {
     // TODO: getBranchFromQueryParams should be selected by the user with some UI
     const bundle = await getBundle(getBranchFromQueryParams())
+    const genesisPlazaContent = await getGenesisPlazaContent()
+    const typesContentExposed = genesisPlazaContent?.contentDeclaration || ''
     const code = getDefaultCode(tab)
     const fileUris = getFilesUri(monaco)
 
     monaco.languages.typescript.typescriptDefaults.setCompilerOptions(monacoConfig(monaco))
     editor.setModel(monaco.editor.createModel(code, 'typescript', fileUris.ts))
-    monaco.editor.createModel(bundle.scene.types + bundle.ui.types, 'typescript', fileUris.types)
+    monaco.editor.createModel(bundle.scene.types + bundle.ui.types + typesContentExposed, 'typescript', fileUris.types)
     isMounted.current = true
     setMonaco(monaco)
     setCode(code)
@@ -54,7 +57,7 @@ function EditorComponent() {
     monaco.editor.getModel(fileUris.ts)?.setValue(code)
 
     setCode(code)
-    setPreviewJsCode('')
+    setPreviewTsCode('')
     setShowExamples(false)
     setTab(tab)
   }
@@ -73,7 +76,7 @@ function EditorComponent() {
 
   function handleClickRun() {
     if (error) return
-    setPreviewJsCode(previewJsCode + ' ')
+    setPreviewTsCode(previewTsCode + ' ')
   }
 
   async function handleClickSnippet(snippet: SnippetInfo) {
@@ -97,7 +100,7 @@ function EditorComponent() {
       if (error) {
         return console.log('error')
       }
-      setPreviewJsCode(code)
+      setPreviewTsCode(code)
     }, 1000),
     []
   )
@@ -105,6 +108,12 @@ function EditorComponent() {
   useEffect(() => {
     void renderPreview(code, error)
   }, [error, code, renderPreview])
+
+  useEffect(() => {
+    if (previewTsCode !== '') {
+      saveCurrentCode(tab, previewTsCode)
+    }
+  }, [previewTsCode])
 
   return (
     <div className="editor">
@@ -158,8 +167,8 @@ function EditorComponent() {
         </div>
       </div>
       <div className="preview">
-        <PreviewScene code={previewJsCode} show={tab === 'scene'} />
-        {tab === 'ui' && <PreviewUi code={previewJsCode} />}
+        <PreviewScene code={previewTsCode} show={tab === 'scene'} />
+        {tab === 'ui' && <PreviewUi code={previewTsCode} />}
       </div>
     </div>
   )
