@@ -16,9 +16,8 @@ export default function getDefaultCode(tab: Tab) {
   const base64Code = new URLSearchParams(document.location.search).get('code') || ''
   const savedCode = (typeof localStorage !== 'undefined' && localStorage.getItem(getSavedCodeKey(tab))) || ''
 
-  if (savedCode) return savedCode
   if (base64Code) return Buffer.from(base64Code, 'base64').toString('utf8')
-
+  if (savedCode) return savedCode
   return placeholder(tab)
 }
 
