@@ -1,6 +1,6 @@
 export const ui = `import ReactEcs, { UiEntity, YGDisplay, YGJustify, YGAlign } from '@dcl/react-ecs'
 
-function App() {
+export default function App() {
   return (
     <UiEntity
       uiTransform={{ width: 500, height: 500, padding: { top: 10, right: 10, bottom: 10, left: 10 } }}

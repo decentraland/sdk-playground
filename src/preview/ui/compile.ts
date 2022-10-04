@@ -12,9 +12,15 @@ export default async function transformCode(codeString: string, dependencies?: R
     'yoga-layout-prebuilt': Yoga,
     react: React
   }
-  const codeReactString = codeString
-    .substring(codeString.indexOf('\n') + 1)
-    .replace('function App()', 'export default function App()')
+
+  const removeReactEcsDependency = (code: string): string => {
+    const reactEcs = codeString.indexOf('@dcl/react-ecs')
+    if (reactEcs === -1) {
+      return code
+    }
+    return code.substring(reactEcs + '@dcl/react-ecs'.length + 1)
+  }
+  const codeReactString = removeReactEcsDependency(codeString)
   const ecsUI =
     YogaTypings +
     `

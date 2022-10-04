@@ -1,4 +1,4 @@
-import { Loader } from 'decentraland-ui'
+// import { Loader } from 'decentraland-ui'
 import React, { useEffect, useState } from 'react'
 import compile from './compile'
 
@@ -13,16 +13,22 @@ function Preview({ code }: PropTypes) {
   useEffect(() => {
     async function getPreview() {
       if (!code) return
-      const Preview = (await compile(code)) as React.FC
-      setPreview((<Preview />) as any)
+      setPreview(null)
+      setTimeout(async () => {
+        const Preview = (await compile(code)) as React.FC
+        setPreview((<Preview />) as any)
+      }, 200)
     }
 
-    getPreview().catch((error) => console.log(error.message))
+    getPreview().catch((error) => {
+      console.log(error.message)
+      setPreview(null)
+    })
   }, [code])
 
   return (
     <>
-      <Loader active={!Preview} size="massive" />
+      {/* <Loader active={!Preview} size="massive" /> */}
       <div>{!!Preview && Preview}</div>
     </>
   )

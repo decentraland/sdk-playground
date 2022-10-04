@@ -110,6 +110,16 @@ function EditorComponent() {
     void renderPreview(code, error)
   }, [error, code, renderPreview])
 
+  function __donotmerge__hack_code() {
+    if (tab === 'ui') {
+      return previewTsCode
+    }
+
+    const from = previewTsCode.indexOf('export const uiComponent')
+    const to = previewTsCode.indexOf('renderUi(')
+    return previewTsCode.slice(from, to) + '\n export default uiComponent'
+  }
+
   return (
     <div className="editor">
       <div className="editor-wrapper">
@@ -163,7 +173,7 @@ function EditorComponent() {
       </div>
       <div className="preview">
         <PreviewScene code={previewTsCode} show={tab === 'scene'} />
-        {tab === 'ui' && <PreviewUi code={previewTsCode} />}
+        <PreviewUi code={__donotmerge__hack_code()} />
       </div>
     </div>
   )
