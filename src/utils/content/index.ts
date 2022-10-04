@@ -11,7 +11,7 @@ type ContentData = {
 let cachedData: ContentData | null = null
 
 export async function getGenesisPlazaContent(): Promise<ContentData | undefined> {
-  const contentUrl = 'https://peer.decentral.io/content'
+  const contentUrl = 'https://peer.decentraland.org/content'
   if (cachedData) {
     return cachedData
   }
