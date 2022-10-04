@@ -1,6 +1,7 @@
 import { Loader } from 'decentraland-ui'
 import { useEffect, useRef, useState } from 'react'
 import { getBranchFromQueryParams, getBundle } from '../../utils/bundle'
+import { getGenesisPlazaContent } from '../../utils/content'
 import { compileScene } from '../swc-compile'
 import { patchPreviewWindow } from './monkeyPatch'
 
@@ -47,12 +48,18 @@ function Preview({ code, show }: PropTypes) {
     async function compileCode() {
       if (code && show) {
         const { scene } = await getBundle(getBranchFromQueryParams())
+        const genesisPlazaContent = await getGenesisPlazaContent()
         const compiledCode = await compileScene(scene.types + code)
         const gameJsTemplate = scene.js
         const previewCode = gameJsTemplate + (';' + compiledCode)
         const window = getWindow()
         if (window) {
           window.PlaygroundCode = previewCode
+          if (genesisPlazaContent) {
+            window.PlaygroundBaseUrl = genesisPlazaContent.baseUrl
+            window.PlaygroundContentMapping = genesisPlazaContent.content
+          }
+
           window.postMessage('sdk-playground-update')
         }
       }
