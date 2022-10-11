@@ -51,7 +51,8 @@ function Preview({ code, show }: PropTypes) {
         const genesisPlazaContent = await getGenesisPlazaContent()
         const compiledCode = await compileScene(scene.types + code)
         const gameJsTemplate = scene.js
-        const previewCode = gameJsTemplate + (';' + compiledCode)
+        const previewCode = `${gameJsTemplate};${compiledCode}`
+        console.log({ previewCode })
         const window = getWindow()
         if (window) {
           window.PlaygroundCode = previewCode

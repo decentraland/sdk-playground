@@ -173,7 +173,7 @@ function EditorComponent() {
       </div>
       <div className="preview">
         <PreviewScene code={previewTsCode} show={tab === 'scene'} />
-        {tab === 'scene' && <PreviewUi code={previewTsCode} />}
+        {tab === 'ui' && <PreviewUi code={previewTsCode} />}
       </div>
     </div>
   )
