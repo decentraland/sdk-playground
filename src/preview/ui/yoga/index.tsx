@@ -21,13 +21,13 @@ type Color4 = {
   a: 0
 }
 
-type StyleProps = {
+type UiBackground = {
   backgroundColor: Color4
 }
 
 interface PropTypes extends EntityPropTypes {
   children: React.ReactNode
-  uiStyles?: StyleProps
+  uiBackground?: UiBackground
   isRootNode?: boolean
   computedLayout?: ComputedLayout
 }
@@ -108,8 +108,8 @@ export const YogaJsx: React.FC<Partial<PropTypes>> = (props) => {
   }
 
   function prepareUiStyles() {
-    if (!props.uiStyles) return {}
-    const { backgroundColor } = props.uiStyles
+    if (!props.uiBackground) return {}
+    const { backgroundColor } = props.uiBackground
     const styles = {
       backgroundColor: backgroundColor && toColor4(backgroundColor)
     }

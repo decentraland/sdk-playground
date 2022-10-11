@@ -173,7 +173,7 @@ function EditorComponent() {
       </div>
       <div className="preview">
         <PreviewScene code={previewTsCode} show={tab === 'scene'} />
-        <PreviewUi code={__donotmerge__hack_code()} />
+        {tab === 'scene' && <PreviewUi code={previewTsCode} />}
       </div>
     </div>
   )
