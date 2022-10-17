@@ -1,7 +1,7 @@
 import { Buffer } from 'buffer'
 import { Tab } from '../../editor/types'
+import { getBranchFromQueryParams, getBundle, getSnippetFile } from '../bundle'
 
-import scene from './scene'
 import ui from './ui'
 
 export function getSavedCodeKey(tab: Tab) {
@@ -12,7 +12,7 @@ export function saveCurrentCode(tab: Tab, code: string) {
   localStorage.setItem(getSavedCodeKey(tab), code)
 }
 
-export default function getDefaultCode(tab: Tab) {
+export default async function getDefaultCode(tab: Tab) {
   const base64Code = new URLSearchParams(document.location.search).get('code') || ''
   const savedCode = (typeof localStorage !== 'undefined' && localStorage.getItem(getSavedCodeKey(tab))) || ''
 
@@ -21,10 +21,18 @@ export default function getDefaultCode(tab: Tab) {
   return placeholder(tab)
 }
 
-function placeholder(type: Tab) {
+async function placeholder(type: Tab) {
+  const bundle = await getBundle(getBranchFromQueryParams())
+
   if (type === 'scene') {
-    return scene
+    const cubeSnippet = bundle.snippetInfo.find((snippet) => snippet.name.toLowerCase().includes('cube'))
+    console.log(cubeSnippet)
+    const snippet = cubeSnippet || bundle.snippetInfo[0]
+    const snippetCode = await getSnippetFile(snippet.path)
+
+    return snippetCode
   }
+
   if (type === 'ui') {
     return ui
   }

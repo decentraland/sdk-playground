@@ -30,7 +30,7 @@ function EditorComponent() {
     const bundle = await getBundle(getBranchFromQueryParams())
     const genesisPlazaContent = await getGenesisPlazaContent()
     const typesContentExposed = genesisPlazaContent?.contentDeclaration || ''
-    const code = getDefaultCode(tab)
+    const code = await getDefaultCode(tab)
     const fileUris = getFilesUri(monaco)
 
     monaco.languages.typescript.typescriptDefaults.setCompilerOptions(monacoConfig(monaco))
@@ -44,16 +44,16 @@ function EditorComponent() {
 
   async function handleChangeTab(nextTab: Tab) {
     if (tab === nextTab) return
-    updateEditor(nextTab)
+    await updateEditor(nextTab)
   }
 
-  function updateEditor(tab: Tab, sample?: string) {
+  async function updateEditor(tab: Tab, sample?: string) {
     if (!monaco || !isMounted.current || !bundle) return
 
     updateUrl(new URL(document.location.href))
     const fileUris = getFilesUri(monaco)
 
-    const code = sample || getDefaultCode(tab)
+    const code = sample || (await getDefaultCode(tab))
     monaco.editor.getModel(fileUris.ts)?.setValue(code)
 
     setCode(code)
@@ -82,7 +82,7 @@ function EditorComponent() {
   async function handleClickSnippet(snippet: SnippetInfo) {
     const snippetCode = await getSnippetFile(snippet.path)
     if (!monaco || !bundle) return
-    updateEditor('scene', snippetCode)
+    await updateEditor('scene', snippetCode)
   }
 
   const handleChange: OnChange = async (value) => {
@@ -126,14 +126,16 @@ function EditorComponent() {
         <div className="editor-buttons">
           <HeaderMenu>
             <HeaderMenu.Left>
-              <div className="ui-dropdown">
-                <Dropdown text={tab} direction="right">
-                  <Dropdown.Menu>
-                    <Dropdown.Item onClick={() => handleChangeTab('scene')} text="Scene" value="scene" />
-                    <Dropdown.Item onClick={() => handleChangeTab('ui')} text="UI" value="ui" />
-                  </Dropdown.Menu>
-                </Dropdown>
-              </div>
+              {false && (
+                <div className="ui-dropdown">
+                  <Dropdown text={tab} direction="right">
+                    <Dropdown.Menu>
+                      <Dropdown.Item onClick={() => handleChangeTab('scene')} text="Scene" value="scene" />
+                      <Dropdown.Item onClick={() => handleChangeTab('ui')} text="UI" value="ui" />
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </div>
+              )}
               <div className="ui-dropdown examples">
                 <Dropdown
                   selectOnBlur={false}
