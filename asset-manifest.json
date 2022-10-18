@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/sdk-playground/static/css/main.ae64f52b.css",
-    "main.js": "/sdk-playground/static/js/main.e35de992.js",
+    "main.js": "/sdk-playground/static/js/main.658720bc.js",
     "static/js/205.1e1a1959.chunk.js": "/sdk-playground/static/js/205.1e1a1959.chunk.js",
     "static/media/wasm-web_bg.wasm": "/sdk-playground/static/media/wasm-web_bg.6a1c3ab563a2db20102c.wasm",
     "static/media/brand-icons.svg": "/sdk-playground/static/media/brand-icons.6729d29753e000c17489.svg",
@@ -22,11 +22,11 @@
     "static/media/outline-icons.woff2": "/sdk-playground/static/media/outline-icons.687a4990ea22bb1a49d4.woff2",
     "index.html": "/sdk-playground/index.html",
     "main.ae64f52b.css.map": "/sdk-playground/static/css/main.ae64f52b.css.map",
-    "main.e35de992.js.map": "/sdk-playground/static/js/main.e35de992.js.map",
+    "main.658720bc.js.map": "/sdk-playground/static/js/main.658720bc.js.map",
     "205.1e1a1959.chunk.js.map": "/sdk-playground/static/js/205.1e1a1959.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.ae64f52b.css",
-    "static/js/main.e35de992.js"
+    "static/js/main.658720bc.js"
   ]
 }
