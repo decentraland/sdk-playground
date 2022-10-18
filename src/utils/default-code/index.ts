@@ -26,7 +26,6 @@ async function placeholder(type: Tab) {
 
   if (type === 'scene') {
     const cubeSnippet = bundle.snippetInfo.find((snippet) => snippet.name.toLowerCase().includes('cube'))
-    console.log(cubeSnippet)
     const snippet = cubeSnippet || bundle.snippetInfo[0]
     const snippetCode = await getSnippetFile(snippet.path)
 

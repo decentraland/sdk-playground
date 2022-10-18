@@ -130,4 +130,4 @@ export function getBranchFromQueryParams() {
   return params.get('sdk-branch') || 'main'
 }
 
-getPackagesData(getBranchFromQueryParams()).then(console.log).catch(console.error)
+getPackagesData(getBranchFromQueryParams()).catch(console.error)
