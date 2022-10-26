@@ -667,7 +667,10 @@
         return qs.get('kernel')
       }
 
-      return 'https://sdk-team-cdn.decentraland.org/@dcl/kernel/branch/main'
+
+      // temp fix for adr81
+      return `https://cdn.decentraland.org/@dcl/kernel/1.0.0-3324480046.commit-3d365d8`
+      // return 'https://sdk-team-cdn.decentraland.org/@dcl/kernel/branch/main'
     }
 
     async function initKernel() {
