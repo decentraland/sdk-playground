@@ -567,6 +567,7 @@
 <body class="dcl-loading">
   <div id="overlay"></div>
   <div id="gameContainer"></div>
+  <audio autoplay id="voice-chat-audio"></audio>
 
   <div id="error-overlay" class="error-overlay-bar">
     <div class="error-overlay-title"></div>
@@ -667,10 +668,7 @@
         return qs.get('kernel')
       }
 
-
-      // temp fix for adr81
-      return `https://cdn.decentraland.org/@dcl/kernel/1.0.0-3324480046.commit-3d365d8`
-      // return 'https://sdk-team-cdn.decentraland.org/@dcl/kernel/branch/main'
+      return 'https://sdk-team-cdn.decentraland.org/@dcl/kernel/branch/main'
     }
 
     async function initKernel() {
@@ -679,16 +677,14 @@
       const rendererBaseUrl = await getRendererBaseUrl()
 
       const url = new URL(window.location.href);
-      const previewServerUrl = 'https://ecs7-template.herokuapp.com'
+      const previewServerUrl = 'https://sdk-test-scenes.decentraland.io'
       const catalystUrl = url.searchParams.get('CATALYST') || previewServerUrl
-      const realm = url.searchParams.get('realm') || `offline`
       const position = url.searchParams.get('position') || '0,0'
       const LOS = url.searchParams.get('LOS') || '2'
 
       url.searchParams.set('ENABLE_ECS7', '');
       url.searchParams.set('SCENE_DEBUG_PANEL', '');
       url.searchParams.set('CATALYST', catalystUrl);
-      url.searchParams.set('realm', realm);
       url.searchParams.set('position', position);
       url.searchParams.set('LOS', LOS);
       window.history.replaceState(null, null, url);
