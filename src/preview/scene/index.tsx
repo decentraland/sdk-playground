@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react'
 import { getBranchFromQueryParams, getBundle } from '../../utils/bundle'
 import { getGenesisPlazaContent } from '../../utils/content'
 import { compileScene } from '../swc-compile'
-import { patchPreviewWindow } from './monkeyPatch'
 
 interface PropTypes {
   code: string
@@ -22,7 +21,7 @@ function Preview({ code, show }: PropTypes) {
 
   function checkEngine() {
     const window = getWindow()
-    const isReady = window?.globalStore?.getState()?.renderer?.engineReady
+    const isReady = window?.globalStore?.getState()?.realm?.realmAdapter
 
     if (isReady) {
       setLoading(false)
@@ -73,13 +72,7 @@ function Preview({ code, show }: PropTypes) {
   const tmpFrameWindow = (frameElement as any)?.contentWindow
   if (tmpFrameWindow?.startKernel && !tmpFrameWindow.kernelStarted) {
     tmpFrameWindow.kernelStarted = true
-    patchPreviewWindow(tmpFrameWindow)
-      .then(() => {
-        tmpFrameWindow.startKernel()
-      })
-      .catch((err) => {
-        console.error(err)
-      })
+    tmpFrameWindow.startKernel()
   }
 
   let iframeUrl = ''
