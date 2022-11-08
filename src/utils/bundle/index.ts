@@ -45,6 +45,7 @@ function getUrls(version: string): ListOfURL {
       amdJsUrl: `${baseUrl}/sdk/amd.min.js`,
       ecs7IndexJsUrl: `${baseUrl}/sdk/index.min.js`,
       ecs7IndexDTsUrl: `${baseUrl}/sdk/index.d.ts`,
+      apisDTsUrl: `${baseUrl}/sdk/apis.d.ts`,
       snippetsInfoJsonUrl: `${baseUrl}/snippets/info.json`,
       snippetsBaseUrl: `${baseUrl}/snippets/`,
       reactEcs7IndexJsUrl: `${baseUrl}/sdk/react-ecs.index.min.js`,
@@ -56,6 +57,7 @@ function getUrls(version: string): ListOfURL {
       amdJsUrl: `https://unpkg.com/@dcl/amd@${version}/dist/amd.min.js`,
       ecs7IndexJsUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/index.min.js`,
       ecs7IndexDTsUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/index.d.ts`,
+      apisDTsUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/playground/sdk/apis.d.ts`,
       snippetsInfoJsonUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/playground/snippets/info.json`,
       snippetsBaseUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/playground/snippets/`,
       reactEcs7IndexJsUrl: `https://unpkg.com/@dcl/react-ecs@${version}/dist/index.min.js`,
@@ -75,23 +77,23 @@ async function getPackagesData(version: string): Promise<PackagesData> {
 
   const urls = getUrls(version)
   try {
-    const [amdJs, ecs7IndexJs, ecs7IndexDTs, snippetsInfoJson, reactEcs7IndexJs, reactEcs7IndexDTs] = await Promise.all(
-      [
+    const [amdJs, ecs7IndexJs, ecs7IndexDTs, apisDTsUrl, snippetsInfoJson, reactEcs7IndexJs, reactEcs7IndexDTs] =
+      await Promise.all([
         fetch(urls.amdJsUrl).then((res) => res.text()),
         fetch(urls.ecs7IndexJsUrl).then((res) => res.text()),
         fetch(urls.ecs7IndexDTsUrl).then((res) => res.text()),
+        fetch(urls.apisDTsUrl).then((res) => res.text()),
         fetch(urls.snippetsInfoJsonUrl).then((res) => res.json()),
         fetch(urls.reactEcs7IndexJsUrl).then((res) => res.text()),
         fetch(urls.reactEcs7IndexDTsUrl)
           .then((res) => res.text())
           .then(parseReactTypes)
-      ]
-    )
+      ])
 
     const ret: PackagesData = {
       scene: {
         js: amdJs + ';\n' + ecs7IndexJs + ';\n' + reactEcs7IndexJs + ';\n',
-        types: ecs7IndexDTs
+        types: ecs7IndexDTs + ';\n' + apisDTsUrl
       },
       ui: {
         js: reactEcs7IndexJs,
