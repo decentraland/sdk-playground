@@ -38,6 +38,22 @@ export async function getSnippetFile(snippetFilename: string) {
 }
 
 function getUrls(version: string): ListOfURL {
+  const debug = true
+  if (debug) {
+    const jsSdkToolchainBaseUrl = 'http://127.0.0.1:8080/'
+
+    return {
+      amdJsUrl: ``,
+      ecs7IndexJsUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/index.bundled.js`,
+      ecs7IndexDTsUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/index.bundled.d.ts`,
+      apisDTsUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/playground/sdk/apis.d.ts`,
+      snippetsInfoJsonUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/playground/snippets/info.json`,
+      snippetsBaseUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/playground/snippets/`,
+      reactEcs7IndexJsUrl: `https://unpkg.com/@dcl/react-ecs@${version}/dist/index.min.js`,
+      reactEcs7IndexDTsUrl: `https://unpkg.com/@dcl/react-ecs@${version}/dist/index.d.ts`
+    }
+  }
+
   const source = getS3OrUnpacked(version)
   if (source.s3) {
     const baseUrl = `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${source.s3}/playground`
@@ -77,9 +93,8 @@ async function getPackagesData(version: string): Promise<PackagesData> {
 
   const urls = getUrls(version)
   try {
-    const [amdJs, ecs7IndexJs, ecs7IndexDTs, apisDTsUrl, snippetsInfoJson, reactEcs7IndexJs, reactEcs7IndexDTs] =
+    const [ecs7IndexJs, ecs7IndexDTs, apisDTsUrl, snippetsInfoJson, reactEcs7IndexJs, reactEcs7IndexDTs] =
       await Promise.all([
-        fetch(urls.amdJsUrl).then((res) => res.text()),
         fetch(urls.ecs7IndexJsUrl).then((res) => res.text()),
         fetch(urls.ecs7IndexDTsUrl).then((res) => res.text()),
         fetch(urls.apisDTsUrl).then((res) => res.text()),
@@ -92,12 +107,12 @@ async function getPackagesData(version: string): Promise<PackagesData> {
 
     const ret: PackagesData = {
       scene: {
-        js: amdJs + ';\n' + ecs7IndexJs + ';\n' + reactEcs7IndexJs + ';\n',
+        js: ecs7IndexJs + ';\n',
         types: ecs7IndexDTs + ';\n' + apisDTsUrl
       },
       ui: {
-        js: reactEcs7IndexJs,
-        types: reactEcs7IndexDTs
+        js: '',
+        types: ''
       },
       snippetInfo: snippetsInfoJson as SnippetInfo[],
       urls
