@@ -48,10 +48,11 @@ function Preview({ code, show }: PropTypes) {
       if (code && show) {
         const { scene } = await getBundle(getBranchFromQueryParams())
         const genesisPlazaContent = await getGenesisPlazaContent()
-        const compiledCode = await compileScene(scene.types + code)
         const gameJsTemplate = scene.js
+        const compiledCode = await compileScene(code)
         const previewCode = `${gameJsTemplate};${compiledCode}`
         const window = getWindow()
+        console.log({ compiledCode, previewCode })
         if (window) {
           window.PlaygroundCode = previewCode
           if (genesisPlazaContent) {

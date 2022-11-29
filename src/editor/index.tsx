@@ -99,6 +99,7 @@ function EditorComponent() {
     debounce(async (code, error) => {
       if (error) {
         console.log('error', { error })
+        return
       }
       setPreviewTsCode(code)
       saveCurrentCode(tab, code)

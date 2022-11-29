@@ -31,7 +31,7 @@ export async function compileScene(code: string) {
       }
     },
     module: {
-      type: 'amd'
+      type: 'commonjs'
     }
   })
 }

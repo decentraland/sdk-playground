@@ -40,11 +40,11 @@ export async function getSnippetFile(snippetFilename: string) {
 function getUrls(version: string): ListOfURL {
   const debug = true
   if (debug) {
-    const jsSdkToolchainBaseUrl = 'http://127.0.0.1:8080/'
+    const jsSdkToolchainBaseUrl = 'http://127.0.0.1:5669/'
 
     return {
       amdJsUrl: ``,
-      ecs7IndexJsUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/index.bundled.js`,
+      ecs7IndexJsUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/scene.js`,
       ecs7IndexDTsUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/index.bundled.d.ts`,
       apisDTsUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/playground/sdk/apis.d.ts`,
       snippetsInfoJsonUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/playground/snippets/info.json`,
@@ -117,6 +117,14 @@ async function getPackagesData(version: string): Promise<PackagesData> {
       snippetInfo: snippetsInfoJson as SnippetInfo[],
       urls
     }
+
+    ret.scene.js = ret.scene.js.replaceAll('export { Animator, ', '//')
+    ret.scene.types = ret.scene.types
+      .replaceAll('import', '//import')
+      .replaceAll('export', '')
+      .replaceAll('export { ReactEcs }', '')
+      .replaceAll('export default ReactEcs', '')
+
     cache.set(version, ret)
   } catch (err) {
     console.error(err)
