@@ -31,8 +31,8 @@ export async function getSnippetFile(snippetFilename: string) {
   const version = getBranchFromQueryParams()
   const source = getS3OrUnpacked(version)
   const url = source.s3
-    ? `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${source.s3}/playground/snippets/${snippetFilename}`
-    : `https://unpkg.com/@dcl/amd@${version}/snippets/${snippetFilename}`
+    ? `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${source.s3}/playground-assets/playground/snippets/${snippetFilename}`
+    : `https://unpkg.com/@dcl/playground-assets@${version}/dist/playground/snippets/${snippetFilename}`
 
   return (await fetch(url)).text()
 }
