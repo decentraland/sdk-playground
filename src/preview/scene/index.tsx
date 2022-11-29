@@ -47,12 +47,20 @@ function Preview({ code, show }: PropTypes) {
     async function compileCode() {
       if (code && show) {
         const { scene } = await getBundle(getBranchFromQueryParams())
+        console.log({ types: scene.types })
         const genesisPlazaContent = await getGenesisPlazaContent()
         const gameJsTemplate = scene.js
-        const compiledCode = await compileScene(code)
-        const previewCode = `${gameJsTemplate};${compiledCode}`
+        const codeToAddFirst = `
+          const EngineApi = require('~system/EngineApi');
+          const process = {env: {}};
+          ${gameJsTemplate}
+          exports.onUpdate = self.onUpdate
+        `
+        const codeToCompile = scene.types + ';' + code
+        const compiledCode = await compileScene(codeToCompile)
+        const previewCode = `${codeToAddFirst};${compiledCode}`
         const window = getWindow()
-        console.log({ compiledCode, previewCode })
+        console.log({ compiledCode, previewCode, types: scene.types })
         if (window) {
           window.PlaygroundCode = previewCode
           if (genesisPlazaContent) {

@@ -1,10 +1,11 @@
 export type ListOfURL = {
-  amdJsUrl: string
-  ecs7IndexJsUrl: string
-  ecs7IndexDTsUrl: string
+  sdk7IndexJsUrl: string
+  sdk7IndexDTsUrl: string
   apisDTsUrl: string
+
   snippetsInfoJsonUrl: string
   snippetsBaseUrl: string
+
   reactEcs7IndexJsUrl: string
   reactEcs7IndexDTsUrl: string
 }
