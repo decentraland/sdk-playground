@@ -3,7 +3,7 @@ on:
     branches:
       - main
 
-name: Upload to Github Pages
+name: test-build-deploy
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
@@ -13,13 +13,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 16.x
-      - run: npm install
-      - name: add homepage to package.json
-        run: node -e "let pkg=require('./package.json'); pkg.homepage='https://decentraland.github.io/sdk-playground'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
-      - run: npm run build
-      - name: Deploy with gh-pages
-        run: |
-          git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-          npm run deploy -- -u "github-actions-bot <support+actions@github.com>"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: install dependencies
+        run: npm install
+      - name: build the pawe
+        run: npm run build
