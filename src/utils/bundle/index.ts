@@ -36,7 +36,7 @@ export async function getSnippetFile(snippetFilename: string) {
 
   const snippetContent = await (await fetch(url)).text()
 
-  // Remove the unnecesary 'export {}', the only purposes of this is to compile all files in one step and test it
+  // Remove the unnecesary 'export {}'
   const withoutExportContent = snippetContent.replace('export {}', '')
 
   // TODO: remove this when the `import` works here
@@ -48,7 +48,7 @@ export async function getSnippetFile(snippetFilename: string) {
     return withoutExportContent
   }
 
-  // Remove the unnecesary 'export {}', the only purposes of this is to compile all files in one step and test it
+  // Remove the import section
   return withoutExportContent.substring(importSectionIndex + importSectionMsg.length)
 }
 
