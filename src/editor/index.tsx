@@ -76,7 +76,7 @@ function EditorComponent() {
 
     url.searchParams.set('code', encodedCode)
     updateUrl(url)
-    window.analytics.track('Click share')
+    window.analytics.track('Click Share')
     await navigator.clipboard.writeText(url.toString())
   }
 
@@ -87,7 +87,7 @@ function EditorComponent() {
 
   async function handleClickSnippet(snippet: SnippetInfo) {
     const snippetCode = await getSnippetFile(snippet.path)
-    window.analytics.track('Click Example', { id: snippet.name })
+    window.analytics.track('Click Example', { id: snippet.name, category: snippet.category })
     if (!monaco || !bundle) return
     await updateEditor('scene', snippetCode)
   }
