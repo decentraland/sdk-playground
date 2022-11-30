@@ -98,7 +98,8 @@ function EditorComponent() {
   const renderPreview = useCallback(
     debounce(async (code, error) => {
       if (error) {
-        return console.log('error')
+        console.log('error', { error })
+        return
       }
       setPreviewTsCode(code)
       saveCurrentCode(tab, code)

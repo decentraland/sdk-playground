@@ -40,6 +40,7 @@ export default async function transformCode(codeString: string, dependencies?: R
   `
   const codeWithUi = ecsUI + codeReactString
   const transformedCode = await compileUi(codeWithUi)
+
   const exports: Record<string, unknown> = {}
   const require = (path: string) => {
     if (mergedDependencies[path]) {

@@ -31,35 +31,52 @@ export async function getSnippetFile(snippetFilename: string) {
   const version = getBranchFromQueryParams()
   const source = getS3OrUnpacked(version)
   const url = source.s3
-    ? `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${source.s3}/playground/snippets/${snippetFilename}`
-    : `https://unpkg.com/@dcl/amd@${version}/snippets/${snippetFilename}`
+    ? `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${source.s3}/playground-assets/playground/snippets/${snippetFilename}`
+    : `https://unpkg.com/@dcl/playground-assets@${version}/dist/playground/snippets/${snippetFilename}`
 
-  return (await fetch(url)).text()
+  const snippetContent = await (await fetch(url)).text()
+
+  // TODO: delete the import replace when imports work
+  // Remove the unnecesary 'export {}' and the imports
+  return snippetContent.replace('export {}', '').replaceAll(/import(.|\n)* from '(.*)'/g, '')
 }
 
 function getUrls(version: string): ListOfURL {
+  const debug = false
+  if (debug) {
+    // run `http-server . --cors` in `js-sdk-toolchain` repo folder and debug locally
+    const jsSdkToolchainBaseUrl = 'http://127.0.0.1:5669/'
+    return {
+      sdk7IndexJsUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/index.js`,
+      sdk7IndexDTsUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/index.bundled.d.ts`,
+      apisDTsUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/playground/sdk/apis.d.ts`,
+      snippetsInfoJsonUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/playground/snippets/info.json`,
+      snippetsBaseUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/playground/snippets/`,
+      reactEcs7IndexJsUrl: `https://unpkg.com/@dcl/react-ecs@${version}/dist/index.min.js`,
+      reactEcs7IndexDTsUrl: `https://unpkg.com/@dcl/react-ecs@${version}/dist/index.d.ts`
+    }
+  }
+
   const source = getS3OrUnpacked(version)
   if (source.s3) {
-    const baseUrl = `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${source.s3}/playground`
+    const baseUrl = `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${source.s3}/playground-assets`
     return {
-      amdJsUrl: `${baseUrl}/sdk/amd.min.js`,
-      ecs7IndexJsUrl: `${baseUrl}/sdk/index.min.js`,
-      ecs7IndexDTsUrl: `${baseUrl}/sdk/index.d.ts`,
-      apisDTsUrl: `${baseUrl}/sdk/apis.d.ts`,
-      snippetsInfoJsonUrl: `${baseUrl}/snippets/info.json`,
-      snippetsBaseUrl: `${baseUrl}/snippets/`,
+      sdk7IndexJsUrl: `${baseUrl}/index.js`,
+      sdk7IndexDTsUrl: `${baseUrl}/index.bundled.d.ts`,
+      apisDTsUrl: `${baseUrl}/playground/sdk/apis.d.ts`,
+      snippetsInfoJsonUrl: `${baseUrl}/playground/snippets/info.json`,
+      snippetsBaseUrl: `${baseUrl}/playground/snippets/`,
       reactEcs7IndexJsUrl: `${baseUrl}/sdk/react-ecs.index.min.js`,
       reactEcs7IndexDTsUrl: `${baseUrl}/sdk/react-ecs.index.d.ts`
     }
   } else {
     // unpkg.com/:package@:version/:file
     return {
-      amdJsUrl: `https://unpkg.com/@dcl/amd@${version}/dist/amd.min.js`,
-      ecs7IndexJsUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/index.min.js`,
-      ecs7IndexDTsUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/index.d.ts`,
+      sdk7IndexJsUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/index.min.js`,
+      sdk7IndexDTsUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/index.bundled.d.ts`,
       apisDTsUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/playground/sdk/apis.d.ts`,
-      snippetsInfoJsonUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/playground/snippets/info.json`,
-      snippetsBaseUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/playground/snippets/`,
+      snippetsInfoJsonUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/playground/snippets/info.json`,
+      snippetsBaseUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/playground/snippets/`,
       reactEcs7IndexJsUrl: `https://unpkg.com/@dcl/react-ecs@${version}/dist/index.min.js`,
       reactEcs7IndexDTsUrl: `https://unpkg.com/@dcl/react-ecs@${version}/dist/index.d.ts`
     }
@@ -77,11 +94,10 @@ async function getPackagesData(version: string): Promise<PackagesData> {
 
   const urls = getUrls(version)
   try {
-    const [amdJs, ecs7IndexJs, ecs7IndexDTs, apisDTsUrl, snippetsInfoJson, reactEcs7IndexJs, reactEcs7IndexDTs] =
+    const [sdk7IndexJsUrl, sdk7IndexDTsUrl, apisDTsUrl, snippetsInfoJson, reactEcs7IndexJs, reactEcs7IndexDTs] =
       await Promise.all([
-        fetch(urls.amdJsUrl).then((res) => res.text()),
-        fetch(urls.ecs7IndexJsUrl).then((res) => res.text()),
-        fetch(urls.ecs7IndexDTsUrl).then((res) => res.text()),
+        fetch(urls.sdk7IndexJsUrl).then((res) => res.text()),
+        fetch(urls.sdk7IndexDTsUrl).then((res) => res.text()),
         fetch(urls.apisDTsUrl).then((res) => res.text()),
         fetch(urls.snippetsInfoJsonUrl).then((res) => res.json()),
         fetch(urls.reactEcs7IndexJsUrl).then((res) => res.text()),
@@ -90,18 +106,27 @@ async function getPackagesData(version: string): Promise<PackagesData> {
           .then(parseReactTypes)
       ])
 
+    const sceneTypes =
+      sdk7IndexDTsUrl
+        .replaceAll('import', '// import')
+        .replaceAll('export { ReactEcs }', '')
+        .replaceAll('export default ReactEcs', '')
+        .replaceAll('export', '') + apisDTsUrl
+
     const ret: PackagesData = {
       scene: {
-        js: amdJs + ';\n' + ecs7IndexJs + ';\n' + reactEcs7IndexJs + ';\n',
-        types: ecs7IndexDTs + ';\n' + apisDTsUrl
+        js: sdk7IndexJsUrl + ';\n',
+        types: sceneTypes + ';\n'
       },
+      // TODO: bundle react-ecs to be able loading the files
       ui: {
-        js: reactEcs7IndexJs,
-        types: reactEcs7IndexDTs
+        js: '',
+        types: ''
       },
       snippetInfo: snippetsInfoJson as SnippetInfo[],
       urls
     }
+
     cache.set(version, ret)
   } catch (err) {
     console.error(err)
