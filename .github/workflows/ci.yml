@@ -15,5 +15,5 @@ jobs:
           node-version: 16.x
       - name: install dependencies
         run: npm install
-      - name: build the pawe
+      - name: build the page
         run: npm run build

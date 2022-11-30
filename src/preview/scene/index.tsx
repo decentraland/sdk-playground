@@ -43,21 +43,21 @@ function Preview({ code, show }: PropTypes) {
     setStartFrame(true)
   }, [show])
 
-  async function getPreviewCode() {
-    const { scene } = await getBundle(getBranchFromQueryParams())
-    const gameJsTemplate = scene.js
-    const codeToAddFirst = `
+  useEffect(() => {
+    async function getPreviewCode() {
+      const { scene } = await getBundle(getBranchFromQueryParams())
+      const gameJsTemplate = scene.js
+      const codeToAddFirst = `
       const EngineApi = require('~system/EngineApi');
       const process = {env: {}};
       ${gameJsTemplate}
       exports.onUpdate = self.onUpdate
     `
-    const codeToCompile = scene.types + ';' + code
-    const compiledCode = await compileScene(codeToCompile)
-    return `${codeToAddFirst};${compiledCode}`
-  }
+      const codeToCompile = scene.types + ';' + code
+      const compiledCode = await compileScene(codeToCompile)
+      return `${codeToAddFirst};${compiledCode}`
+    }
 
-  useEffect(() => {
     async function compileCode() {
       if (code && show) {
         const genesisPlazaContent = await getGenesisPlazaContent()

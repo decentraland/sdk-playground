@@ -94,7 +94,7 @@ async function getPackagesData(version: string): Promise<PackagesData> {
 
   const urls = getUrls(version)
   try {
-    const [sdk7IndexJsUrl, sdk7IndexDTsUrl, apisDTsUrl, snippetsInfoJson, reactEcs7IndexJs, reactEcs7IndexDTs] =
+    const [sdk7IndexJsUrl, sdk7IndexDTsUrl, apisDTsUrl, snippetsInfoJson, _reactEcs7IndexJs, _reactEcs7IndexDTs] =
       await Promise.all([
         fetch(urls.sdk7IndexJsUrl).then((res) => res.text()),
         fetch(urls.sdk7IndexDTsUrl).then((res) => res.text()),
