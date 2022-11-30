@@ -34,7 +34,22 @@ export async function getSnippetFile(snippetFilename: string) {
     ? `https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/${source.s3}/playground-assets/playground/snippets/${snippetFilename}`
     : `https://unpkg.com/@dcl/playground-assets@${version}/dist/playground/snippets/${snippetFilename}`
 
-  return (await fetch(url)).text()
+  const snippetContent = await (await fetch(url)).text()
+
+  // Remove the unnecesary 'export {}', the only purposes of this is to compile all files in one step and test it
+  const withoutExportContent = snippetContent.replace('export {}', '')
+
+  // TODO: remove this when the `import` works here
+  const importSectionMsg = '// import-section-end'
+  const importSectionIndex = withoutExportContent.search(importSectionMsg)
+
+  if (importSectionIndex === -1) {
+    console.log(`The snippet ${snippetFilename} has no import-section-end`)
+    return withoutExportContent
+  }
+
+  // Remove the unnecesary 'export {}', the only purposes of this is to compile all files in one step and test it
+  return withoutExportContent.substring(importSectionIndex + importSectionMsg.length)
 }
 
 function getUrls(version: string): ListOfURL {
