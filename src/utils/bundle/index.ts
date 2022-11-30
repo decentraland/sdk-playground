@@ -36,20 +36,9 @@ export async function getSnippetFile(snippetFilename: string) {
 
   const snippetContent = await (await fetch(url)).text()
 
-  // Remove the unnecesary 'export {}'
-  const withoutExportContent = snippetContent.replace('export {}', '')
-
-  // TODO: remove this when the `import` works here
-  const importSectionMsg = '// import-section-end'
-  const importSectionIndex = withoutExportContent.search(importSectionMsg)
-
-  if (importSectionIndex === -1) {
-    console.log(`The snippet ${snippetFilename} has no import-section-end`)
-    return withoutExportContent
-  }
-
-  // Remove the import section
-  return withoutExportContent.substring(importSectionIndex + importSectionMsg.length)
+  // TODO: delete the import replace when imports work
+  // Remove the unnecesary 'export {}' and the imports
+  return snippetContent.replace('export {}', '').replaceAll(/import(.|\n)* from '(.*)'/g, '')
 }
 
 function getUrls(version: string): ListOfURL {
