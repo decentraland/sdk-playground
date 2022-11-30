@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import MonacoEditor, { OnChange, OnMount, OnValidate } from '@monaco-editor/react'
 
 import PreviewScene from '../preview/scene'
-import PreviewUi from '../preview/ui'
 import Samples from '../samples'
 import { getBranchFromQueryParams, getBundle, getSnippetFile } from '../utils/bundle'
 import getDefaultCode, { saveCurrentCode } from '../utils/default-code'
@@ -14,6 +13,12 @@ import { getFilesUri, updateUrl, debounce, monacoConfig } from './utils'
 
 import './editor.css'
 import { getGenesisPlazaContent } from '../utils/content'
+
+declare let window: {
+  analytics: {
+    track: (eventName: string, properties?: Record<string, unknown>) => void
+  }
+}
 
 function EditorComponent() {
   const isMounted = useRef(false)
@@ -71,6 +76,7 @@ function EditorComponent() {
 
     url.searchParams.set('code', encodedCode)
     updateUrl(url)
+    window.analytics.track('Click Share')
     await navigator.clipboard.writeText(url.toString())
   }
 
@@ -81,6 +87,7 @@ function EditorComponent() {
 
   async function handleClickSnippet(snippet: SnippetInfo) {
     const snippetCode = await getSnippetFile(snippet.path)
+    window.analytics.track('Click Example', { id: snippet.name, category: snippet.category })
     if (!monaco || !bundle) return
     await updateEditor('scene', snippetCode)
   }
@@ -110,16 +117,6 @@ function EditorComponent() {
   useEffect(() => {
     void renderPreview(code, error)
   }, [error, code, renderPreview])
-
-  function __donotmerge__hack_code() {
-    if (tab === 'ui') {
-      return previewTsCode
-    }
-
-    const from = previewTsCode.indexOf('export const uiComponent')
-    const to = previewTsCode.indexOf('renderUi(')
-    return previewTsCode.slice(from, to) + '\n export default uiComponent'
-  }
 
   return (
     <div className="editor">
@@ -176,7 +173,6 @@ function EditorComponent() {
       </div>
       <div className="preview">
         <PreviewScene code={previewTsCode} show={tab === 'scene'} />
-        {tab === 'ui' && <PreviewUi code={previewTsCode} />}
       </div>
     </div>
   )
