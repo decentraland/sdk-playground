@@ -13,7 +13,7 @@ async function compile(code: string, opts: any) {
 
   return swc.transformSync(code, {
     filename: 'index.tsx',
-    sourceMaps: true,
+    sourceMaps: 'inline',
     ...opts
   }).code
 }

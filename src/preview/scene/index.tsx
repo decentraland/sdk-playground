@@ -66,7 +66,7 @@ function Preview({ code, show }: PropTypes) {
     `
       const codeToCompile = packageData?.scene.types + ';' + code
       const compiledCode = await compileScene(codeToCompile)
-      return `${codeToAddFirst};${compiledCode}`
+      return `${codeToAddFirst};eval(${JSON.stringify(compiledCode)})`
     }
 
     async function compileCode() {
