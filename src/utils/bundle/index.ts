@@ -61,7 +61,7 @@ function getUrls(version: string): ListOfURL {
   } else {
     // unpkg.com/:package@:version/:file
     return {
-      sdk7IndexJsUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/index.min.js`,
+      sdk7IndexJsUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/index.js`,
       sdk7IndexDTsUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/index.bundled.d.ts`,
       sdk7PackageJsonUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/playground/sdk/dcl-sdk.package.json`,
       apisDTsUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/playground/sdk/apis.d.ts`,
