@@ -1,6 +1,7 @@
 import { Loader } from 'decentraland-ui'
 import { useEffect, useRef, useState } from 'react'
 import { getBranchFromQueryParams, getBundle } from '../../utils/bundle'
+import { PackagesData } from '../../utils/bundle/types'
 import { getGenesisPlazaContent } from '../../utils/content'
 import { compileScene } from '../swc-compile'
 
@@ -14,6 +15,7 @@ function Preview({ code, show }: PropTypes) {
   const [startFrame, setStartFrame] = useState<boolean>(false)
   const frameRef = useRef<HTMLIFrameElement>(null)
   const [loading, setLoading] = useState<boolean>(true)
+  const [packageData, setPackagesData] = useState<PackagesData | null>(null)
 
   function getWindow() {
     return frameRef.current?.contentWindow as any
@@ -32,9 +34,13 @@ function Preview({ code, show }: PropTypes) {
     setTimeout(checkEngine, 1000)
   }
 
+  useEffect(() => {}, [])
+
   useEffect(() => {
     isMounted.current = true
     checkEngine()
+
+    getBundle(getBranchFromQueryParams()).then(setPackagesData).catch(console.error)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -44,16 +50,21 @@ function Preview({ code, show }: PropTypes) {
   }, [show])
 
   useEffect(() => {
+    if (packageData === null) {
+      return
+    }
+
     async function getPreviewCode() {
-      const { scene } = await getBundle(getBranchFromQueryParams())
-      const gameJsTemplate = scene.js
+      const gameJsTemplate = packageData?.scene.js
       const codeToAddFirst = `
       const EngineApi = require('~system/EngineApi');
+      const communicationsController = require('~system/CommunicationsController');
+      const EthereumController = require('~system/EthereumController');
       const process = {env: {}};
       ${gameJsTemplate}
       exports.onUpdate = self.onUpdate
     `
-      const codeToCompile = scene.types + ';' + code
+      const codeToCompile = packageData?.scene.types + ';' + code
       const compiledCode = await compileScene(codeToCompile)
       return `${codeToAddFirst};${compiledCode}`
     }
@@ -77,7 +88,11 @@ function Preview({ code, show }: PropTypes) {
     compileCode().catch((e) => {
       console.log(e)
     })
-  }, [code, show])
+  }, [code, show, packageData])
+
+  if (packageData === null) {
+    return <Loader active={loading} size="massive" />
+  }
 
   const frameElement = document.getElementById('previewFrame')
   const tmpFrameWindow = (frameElement as any)?.contentWindow
@@ -98,6 +113,18 @@ function Preview({ code, show }: PropTypes) {
     } else {
       iframeUrl = `${urlPath}?${document.location.search}`
     }
+
+    const finalUrl = new URL(iframeUrl)
+    finalUrl.searchParams.delete('renderer')
+    finalUrl.searchParams.delete('renderer-branch')
+    finalUrl.searchParams.delete('renderer-version')
+    finalUrl.searchParams.delete('kernel')
+    finalUrl.searchParams.delete('kernel-branch')
+    finalUrl.searchParams.delete('kernel-version')
+
+    finalUrl.searchParams.set('renderer', packageData.dependencies.rendererUrl)
+    finalUrl.searchParams.set('kernel', packageData.dependencies.kernelUrl)
+    iframeUrl = finalUrl.toString()
   } catch (err) {
     console.log(err)
   }

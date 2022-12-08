@@ -1,14 +1,6 @@
-import { PackagesData, ListOfURL, SnippetInfo } from './types'
+import { PackagesData, ListOfURL, SnippetInfo, DependenciesVersion } from './types'
 
 const cache: Map<string, PackagesData> = new Map()
-
-function parseReactTypes(types: string) {
-  // Strip export { } to be parsed as a module
-  const fixedTypes = types.replace('export { }', '').replace(/declare /g, '')
-  return `declare module '@dcl/react-ecs' {
-    ${fixedTypes}
-  }`
-}
 
 // version can be
 // - a branch: 'feat/new-feature', 'fix/something', 'main' maps to 'refs/heads/main'
@@ -17,8 +9,7 @@ function parseReactTypes(types: string) {
 // - a commit version: '7.0.0-commit-bad7ffadbfe7e'
 
 function getS3OrUnpacked(version: string) {
-  // TODO: After the first release, remove the 'latest' in this first condition
-  if (version === 'main' || version === 'next' || version === 'latest') {
+  if (version === 'main' || version === 'next') {
     return { s3: 'refs/heads/main' }
   } else if (version.includes('.') || version === 'latest') {
     return { unpacked: version }
@@ -49,11 +40,10 @@ function getUrls(version: string): ListOfURL {
     return {
       sdk7IndexJsUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/index.js`,
       sdk7IndexDTsUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/index.bundled.d.ts`,
+      sdk7PackageJsonUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/playground/sdk/dcl-sdk.package.json`,
       apisDTsUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/playground/sdk/apis.d.ts`,
       snippetsInfoJsonUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/playground/snippets/info.json`,
-      snippetsBaseUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/playground/snippets/`,
-      reactEcs7IndexJsUrl: `https://unpkg.com/@dcl/react-ecs@${version}/dist/index.min.js`,
-      reactEcs7IndexDTsUrl: `https://unpkg.com/@dcl/react-ecs@${version}/dist/index.d.ts`
+      snippetsBaseUrl: `${jsSdkToolchainBaseUrl}packages/%40dcl/playground-assets/dist/playground/snippets/`
     }
   }
 
@@ -63,25 +53,73 @@ function getUrls(version: string): ListOfURL {
     return {
       sdk7IndexJsUrl: `${baseUrl}/index.js`,
       sdk7IndexDTsUrl: `${baseUrl}/index.bundled.d.ts`,
+      sdk7PackageJsonUrl: `${baseUrl}/playground/sdk/dcl-sdk.package.json`,
       apisDTsUrl: `${baseUrl}/playground/sdk/apis.d.ts`,
       snippetsInfoJsonUrl: `${baseUrl}/playground/snippets/info.json`,
-      snippetsBaseUrl: `${baseUrl}/playground/snippets/`,
-      reactEcs7IndexJsUrl: `${baseUrl}/sdk/react-ecs.index.min.js`,
-      reactEcs7IndexDTsUrl: `${baseUrl}/sdk/react-ecs.index.d.ts`
+      snippetsBaseUrl: `${baseUrl}/playground/snippets/`
     }
   } else {
     // unpkg.com/:package@:version/:file
     return {
       sdk7IndexJsUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/index.min.js`,
       sdk7IndexDTsUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/index.bundled.d.ts`,
-      apisDTsUrl: `https://unpkg.com/@dcl/sdk@${version}/dist/playground/sdk/apis.d.ts`,
+      sdk7PackageJsonUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/playground/sdk/dcl-sdk.package.json`,
+      apisDTsUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/playground/sdk/apis.d.ts`,
       snippetsInfoJsonUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/playground/snippets/info.json`,
-      snippetsBaseUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/playground/snippets/`,
-      reactEcs7IndexJsUrl: `https://unpkg.com/@dcl/react-ecs@${version}/dist/index.min.js`,
-      reactEcs7IndexDTsUrl: `https://unpkg.com/@dcl/react-ecs@${version}/dist/index.d.ts`
+      snippetsBaseUrl: `https://unpkg.com/@dcl/playground-assets@${version}/dist/playground/snippets/`
     }
   }
 }
+
+/**
+ * Get the bundle(js and types) depending on the type of editor.
+ * @returns return the js code and its types
+ */
+export async function getBundle(version: string = 'latest'): Promise<PackagesData> {
+  return getPackagesData(version)
+}
+
+export function getBranchFromQueryParams() {
+  const params = new URLSearchParams(document.location.search)
+  return params.get('sdk-branch') || 'main'
+}
+
+function getRendererBaseUrl(defaultUrl?: string): string {
+  const qs = new URLSearchParams(document.location.search)
+
+  if (qs.has('renderer')) {
+    return qs.get('renderer')!
+  }
+
+  if (qs.has('renderer-branch')) {
+    return `https://renderer-artifacts.decentraland.org/branch/${qs.get('renderer-branch')}`
+  }
+
+  if (qs.has('renderer-version')) {
+    return `https://cdn.decentraland.org/@dcl/unity-renderer/${qs.get('renderer-version')}`
+  }
+
+  return defaultUrl || 'https://renderer-artifacts.decentraland.org/branch/main'
+}
+
+function getKernelBaseUrl(defaultUrl?: string): string {
+  const qs = new URLSearchParams(document.location.search)
+
+  if (qs.has('kernel')) {
+    return qs.get('kernel')!
+  }
+
+  if (qs.has('kernel-version')) {
+    return `https://cdn.decentraland.org/@dcl/kernel/${qs.get('kernel-version')}`
+  }
+
+  if (qs.has('kernel-branch')) {
+    return `https://sdk-team-cdn.decentraland.org/@dcl/kernel/branch/${qs.get('kernel-branch')}`
+  }
+
+  return defaultUrl || 'https://sdk-team-cdn.decentraland.org/@dcl/kernel/branch/main'
+}
+
 /**
  * Fetch all data from published packages neccesary to develop in the playground
  * @param version
@@ -92,19 +130,26 @@ async function getPackagesData(version: string): Promise<PackagesData> {
     return cache.get(version)!
   }
 
+  console.log('getPackagesDagta => ' + version)
+
   const urls = getUrls(version)
   try {
-    const [sdk7IndexJsUrl, sdk7IndexDTsUrl, apisDTsUrl, snippetsInfoJson, _reactEcs7IndexJs, _reactEcs7IndexDTs] =
-      await Promise.all([
-        fetch(urls.sdk7IndexJsUrl).then((res) => res.text()),
-        fetch(urls.sdk7IndexDTsUrl).then((res) => res.text()),
-        fetch(urls.apisDTsUrl).then((res) => res.text()),
-        fetch(urls.snippetsInfoJsonUrl).then((res) => res.json()),
-        fetch(urls.reactEcs7IndexJsUrl).then((res) => res.text()),
-        fetch(urls.reactEcs7IndexDTsUrl)
-          .then((res) => res.text())
-          .then(parseReactTypes)
-      ])
+    const [sdk7PackageJson, sdk7IndexJsUrl, sdk7IndexDTsUrl, apisDTsUrl, snippetsInfoJson] = await Promise.all([
+      fetch(urls.sdk7PackageJsonUrl).then((res) => res.json()),
+      fetch(urls.sdk7IndexJsUrl).then((res) => res.text()),
+      fetch(urls.sdk7IndexDTsUrl).then((res) => res.text()),
+      fetch(urls.apisDTsUrl).then((res) => res.text()),
+      fetch(urls.snippetsInfoJsonUrl).then((res) => res.json())
+    ])
+
+    const dependencies: DependenciesVersion = {
+      kernelUrl: getKernelBaseUrl(
+        `https://cdn.decentraland.org/@dcl/kernel/` + sdk7PackageJson.dependencies['@dcl/kernel']
+      ),
+      rendererUrl: getRendererBaseUrl(
+        `https://cdn.decentraland.org/@dcl/unity-renderer/` + sdk7PackageJson.dependencies['@dcl/unity-renderer']
+      )
+    }
 
     const sceneTypes =
       sdk7IndexDTsUrl
@@ -124,7 +169,8 @@ async function getPackagesData(version: string): Promise<PackagesData> {
         types: ''
       },
       snippetInfo: snippetsInfoJson as SnippetInfo[],
-      urls
+      urls,
+      dependencies
     }
 
     cache.set(version, ret)
@@ -133,28 +179,13 @@ async function getPackagesData(version: string): Promise<PackagesData> {
 
     // Fallback every wrong version to latest
     if (version !== 'latest') {
-      return getPackagesData('latest')
+      // return getPackagesData('latest')
     }
 
     throw new Error(
-      `Fatal error, package data fetching fails and it couldn't be possible to fallback to latest version.`
+      `Fatal error, package data fetching fails ${version} and it couldn't be possible to fallback to latest version.`
     )
   }
 
   return cache.get(version)!
 }
-
-/**
- * Get the bundle(js and types) depending on the type of editor.
- * @returns return the js code and its types
- */
-export async function getBundle(version: string = 'latest'): Promise<PackagesData> {
-  return getPackagesData(version)
-}
-
-export function getBranchFromQueryParams() {
-  const params = new URLSearchParams(document.location.search)
-  return params.get('sdk-branch') || 'main'
-}
-
-getPackagesData(getBranchFromQueryParams()).catch(console.error)

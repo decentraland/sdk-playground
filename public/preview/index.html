@@ -677,17 +677,20 @@
       const rendererBaseUrl = await getRendererBaseUrl()
 
       const url = new URL(window.location.href);
-      const previewServerUrl = 'https://sdk-test-scenes.decentraland.io'
-      const catalystUrl = url.searchParams.get('CATALYST') || previewServerUrl
+      const catalystUrl = url.searchParams.get('CATALYST') || 'peer.decentraland.zone'
       const position = url.searchParams.get('position') || '0,0'
       const LOS = url.searchParams.get('LOS') || '2'
 
       url.searchParams.set('ENABLE_ECS7', '');
       url.searchParams.set('SCENE_DEBUG_PANEL', '');
-      url.searchParams.set('CATALYST', catalystUrl);
+      // url.searchParams.set('CATALYST', catalystUrl);
       url.searchParams.set('position', position);
       url.searchParams.set('LOS', LOS);
+      url.searchParams.set('DEBUG_MODE', true);
+      url.searchParams.set('realm', 'offline?cityLoaderContentServer=');
       window.history.replaceState(null, null, url);
+
+      console.log('Playground URL used > ' + url)
 
       await injectScript(kernelScript)
 
