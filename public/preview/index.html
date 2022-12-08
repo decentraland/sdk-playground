@@ -677,19 +677,28 @@
       const rendererBaseUrl = await getRendererBaseUrl()
 
       const url = new URL(window.location.href);
-      const previewServerUrl = 'https://sdk-test-scenes.decentraland.io'
-      const catalystUrl = url.searchParams.get('CATALYST') || previewServerUrl
+
+      const previewServerUrl = 'https://sdk-test-scenes.decentraland.zone'
       const position = url.searchParams.get('position') || '0,0'
       const LOS = url.searchParams.get('LOS') || '2'
+
+      const catalystUrl = url.searchParams.get('CATALYST') || previewServerUrl
+
+      // TODO: approach without preview server
+      // const catalystUrl = url.searchParams.get('CATALYST') || 'peer.decentraland.zone'
+      // url.searchParams.set('realm', 'offline?cityLoaderContentServer=');
 
       url.searchParams.set('ENABLE_ECS7', '');
       url.searchParams.set('SCENE_DEBUG_PANEL', '');
       url.searchParams.set('CATALYST', catalystUrl);
       url.searchParams.set('position', position);
       url.searchParams.set('LOS', LOS);
+      url.searchParams.set('DEBUG_MODE', true);
+
       window.history.replaceState(null, null, url);
 
       await injectScript(kernelScript)
+      console.log('Playground URL used > ' + url)
 
       const container = document.getElementById('gameContainer')
       const DecentralandKernel = globalThis.DecentralandKernel

@@ -3,7 +3,7 @@ export type ContentMapping = {
   hash: string
 }
 
-type ContentData = {
+export type ContentData = {
   baseUrl: string
   content: ContentMapping[]
   contentDeclaration: string

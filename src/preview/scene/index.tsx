@@ -1,12 +1,45 @@
 import { Loader } from 'decentraland-ui'
 import { useEffect, useRef, useState } from 'react'
 import { getBranchFromQueryParams, getBundle } from '../../utils/bundle'
-import { getGenesisPlazaContent } from '../../utils/content'
-import { compileScene } from '../swc-compile'
+import { PackagesData } from '../../utils/bundle/types'
+import { ContentData, getGenesisPlazaContent } from '../../utils/content'
+import { getPreviewCode } from './scene-code'
 
 interface PropTypes {
   code: string
   show: boolean
+}
+
+function getIframeUrl(packageData: PackagesData) {
+  let iframeUrl = ''
+  try {
+    const urlPath = `preview/index.html`
+    // Workaround so it's work in production with root path and non-root ones
+    if (document.location.pathname === '/') {
+      const baseUrl = document.location.protocol + '//' + document.location.host + document.location.pathname
+      const url = new URL(urlPath, baseUrl)
+      url.search = document.location.search
+      iframeUrl = url.toString()
+    } else {
+      iframeUrl = `${urlPath}?${document.location.search}`
+    }
+
+    const finalUrl = new URL(iframeUrl)
+    finalUrl.searchParams.delete('renderer')
+    finalUrl.searchParams.delete('renderer-branch')
+    finalUrl.searchParams.delete('renderer-version')
+    finalUrl.searchParams.delete('kernel')
+    finalUrl.searchParams.delete('kernel-branch')
+    finalUrl.searchParams.delete('kernel-version')
+
+    finalUrl.searchParams.set('renderer', packageData.dependencies.rendererUrl)
+    finalUrl.searchParams.set('kernel', packageData.dependencies.kernelUrl)
+    iframeUrl = finalUrl.toString()
+  } catch (err) {
+    console.log(err)
+  }
+
+  return iframeUrl
 }
 
 function Preview({ code, show }: PropTypes) {
@@ -14,6 +47,8 @@ function Preview({ code, show }: PropTypes) {
   const [startFrame, setStartFrame] = useState<boolean>(false)
   const frameRef = useRef<HTMLIFrameElement>(null)
   const [loading, setLoading] = useState<boolean>(true)
+  const [packageData, setPackagesData] = useState<PackagesData | null>(null)
+  const [genesisPlaza, setGenesisPlaza] = useState<ContentData | undefined | null>(null)
 
   function getWindow() {
     return frameRef.current?.contentWindow as any
@@ -35,6 +70,19 @@ function Preview({ code, show }: PropTypes) {
   useEffect(() => {
     isMounted.current = true
     checkEngine()
+
+    getBundle(getBranchFromQueryParams())
+      .then(setPackagesData)
+      .catch((err) => {
+        console.error('The package data fetch has failed.', err)
+      })
+
+    getGenesisPlazaContent()
+      .then(setGenesisPlaza)
+      .catch((err) => {
+        console.error('Fail while retrieving the genesis content data', err)
+      })
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -44,40 +92,29 @@ function Preview({ code, show }: PropTypes) {
   }, [show])
 
   useEffect(() => {
-    async function getPreviewCode() {
-      const { scene } = await getBundle(getBranchFromQueryParams())
-      const gameJsTemplate = scene.js
-      const codeToAddFirst = `
-      const EngineApi = require('~system/EngineApi');
-      const process = {env: {}};
-      ${gameJsTemplate}
-      exports.onUpdate = self.onUpdate
-    `
-      const codeToCompile = scene.types + ';' + code
-      const compiledCode = await compileScene(codeToCompile)
-      return `${codeToAddFirst};${compiledCode}`
-    }
+    if (code && show && packageData && genesisPlaza !== null) {
+      getPreviewCode(packageData, code)
+        .then((previewCode) => {
+          const window = getWindow()
+          if (window) {
+            window.PlaygroundCode = previewCode
+            if (genesisPlaza) {
+              window.PlaygroundBaseUrl = genesisPlaza.baseUrl
+              window.PlaygroundContentMapping = genesisPlaza.content
+            }
 
-    async function compileCode() {
-      if (code && show) {
-        const genesisPlazaContent = await getGenesisPlazaContent()
-        const previewCode = await getPreviewCode()
-        const window = getWindow()
-        if (window) {
-          window.PlaygroundCode = previewCode
-          if (genesisPlazaContent) {
-            window.PlaygroundBaseUrl = genesisPlazaContent.baseUrl
-            window.PlaygroundContentMapping = genesisPlazaContent.content
+            window.postMessage('sdk-playground-update')
           }
-
-          window.postMessage('sdk-playground-update')
-        }
-      }
+        })
+        .catch((err) => {
+          console.error('Compile and send preview has failed.', err)
+        })
     }
-    compileCode().catch((e) => {
-      console.log(e)
-    })
-  }, [code, show])
+  }, [code, show, packageData, genesisPlaza])
+
+  if (packageData === null) {
+    return <Loader active={loading} size="massive" />
+  }
 
   const frameElement = document.getElementById('previewFrame')
   const tmpFrameWindow = (frameElement as any)?.contentWindow
@@ -86,22 +123,7 @@ function Preview({ code, show }: PropTypes) {
     tmpFrameWindow.startKernel()
   }
 
-  let iframeUrl = ''
-  try {
-    const urlPath = `preview/index.html`
-    // Workaround so it's work in production with root path and non-root ones
-    if (document.location.pathname === '/') {
-      const baseUrl = document.location.protocol + '//' + document.location.host + document.location.pathname
-      const url = new URL(urlPath, baseUrl)
-      url.search = document.location.search
-      iframeUrl = url.toString()
-    } else {
-      iframeUrl = `${urlPath}?${document.location.search}`
-    }
-  } catch (err) {
-    console.log(err)
-  }
-
+  const iframeUrl = getIframeUrl(packageData)
   if (!startFrame) return null
 
   const showDisplay = show && !loading ? {} : { display: 'none' }

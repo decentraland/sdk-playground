@@ -1,6 +1,5 @@
 import { transformSync } from '@swc/wasm-web'
 import { Config } from './swc-compiler-types'
-// import { getBranchFromQueryParams, getBundle } from '../utils/bundle'
 
 let swc: { transformSync: typeof transformSync }
 
@@ -13,7 +12,7 @@ async function compile(code: string, opts: any) {
 
   return swc.transformSync(code, {
     filename: 'index.tsx',
-    sourceMaps: true,
+    sourceMaps: 'inline',
     ...opts
   }).code
 }
