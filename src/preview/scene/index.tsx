@@ -62,7 +62,7 @@ function Preview({ code, show }: PropTypes) {
       const EthereumController = require('~system/EthereumController');
       const process = {env: {}};
       ${gameJsTemplate}
-      exports.onUpdate = self.onUpdate
+      exports.onUpdate = globalThis.onUpdate
     `
       const codeToCompile = packageData?.scene.types + ';' + code
       const compiledCode = await compileScene(codeToCompile)
