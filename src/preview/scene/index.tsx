@@ -2,105 +2,15 @@ import { Loader } from 'decentraland-ui'
 import { useEffect, useRef, useState } from 'react'
 import { getBranchFromQueryParams, getBundle } from '../../utils/bundle'
 import { PackagesData } from '../../utils/bundle/types'
-import { getGenesisPlazaContent } from '../../utils/content'
-import { compileScene } from '../swc-compile'
+import { ContentData, getGenesisPlazaContent } from '../../utils/content'
+import { getPreviewCode } from './scene-code'
 
 interface PropTypes {
   code: string
   show: boolean
 }
 
-function Preview({ code, show }: PropTypes) {
-  const isMounted = useRef(false)
-  const [startFrame, setStartFrame] = useState<boolean>(false)
-  const frameRef = useRef<HTMLIFrameElement>(null)
-  const [loading, setLoading] = useState<boolean>(true)
-  const [packageData, setPackagesData] = useState<PackagesData | null>(null)
-
-  function getWindow() {
-    return frameRef.current?.contentWindow as any
-  }
-
-  function checkEngine() {
-    const window = getWindow()
-    const isReady = window?.globalStore?.getState()?.realm?.realmAdapter
-
-    if (isReady) {
-      setLoading(false)
-      window.postMessage('sdk-playground-update')
-      return
-    }
-
-    setTimeout(checkEngine, 1000)
-  }
-
-  useEffect(() => {}, [])
-
-  useEffect(() => {
-    isMounted.current = true
-    checkEngine()
-
-    getBundle(getBranchFromQueryParams()).then(setPackagesData).catch(console.error)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    if (!isMounted.current || !show) return
-    setStartFrame(true)
-  }, [show])
-
-  useEffect(() => {
-    if (packageData === null) {
-      return
-    }
-
-    async function getPreviewCode() {
-      const gameJsTemplate = packageData?.scene.js
-      const codeToAddFirst = `
-      const EngineApi = require('~system/EngineApi');
-      const communicationsController = require('~system/CommunicationsController');
-      const EthereumController = require('~system/EthereumController');
-      const process = {env: {}};
-      ${gameJsTemplate}
-      exports.onUpdate = globalThis.onUpdate
-    `
-      const codeToCompile = packageData?.scene.types + ';' + code
-      const compiledCode = await compileScene(codeToCompile)
-      return `${codeToAddFirst};eval(${JSON.stringify(compiledCode)})`
-    }
-
-    async function compileCode() {
-      if (code && show) {
-        const genesisPlazaContent = await getGenesisPlazaContent()
-        const previewCode = await getPreviewCode()
-        const window = getWindow()
-        if (window) {
-          window.PlaygroundCode = previewCode
-          if (genesisPlazaContent) {
-            window.PlaygroundBaseUrl = genesisPlazaContent.baseUrl
-            window.PlaygroundContentMapping = genesisPlazaContent.content
-          }
-
-          window.postMessage('sdk-playground-update')
-        }
-      }
-    }
-    compileCode().catch((e) => {
-      console.log(e)
-    })
-  }, [code, show, packageData])
-
-  if (packageData === null) {
-    return <Loader active={loading} size="massive" />
-  }
-
-  const frameElement = document.getElementById('previewFrame')
-  const tmpFrameWindow = (frameElement as any)?.contentWindow
-  if (tmpFrameWindow?.startKernel && !tmpFrameWindow.kernelStarted) {
-    tmpFrameWindow.kernelStarted = true
-    tmpFrameWindow.startKernel()
-  }
-
+function getIframeUrl(packageData: PackagesData) {
   let iframeUrl = ''
   try {
     const urlPath = `preview/index.html`
@@ -129,6 +39,91 @@ function Preview({ code, show }: PropTypes) {
     console.log(err)
   }
 
+  return iframeUrl
+}
+
+function Preview({ code, show }: PropTypes) {
+  const isMounted = useRef(false)
+  const [startFrame, setStartFrame] = useState<boolean>(false)
+  const frameRef = useRef<HTMLIFrameElement>(null)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [packageData, setPackagesData] = useState<PackagesData | null>(null)
+  const [genesisPlaza, setGenesisPlaza] = useState<ContentData | undefined | null>(null)
+
+  function getWindow() {
+    return frameRef.current?.contentWindow as any
+  }
+
+  function checkEngine() {
+    const window = getWindow()
+    const isReady = window?.globalStore?.getState()?.realm?.realmAdapter
+
+    if (isReady) {
+      setLoading(false)
+      window.postMessage('sdk-playground-update')
+      return
+    }
+
+    setTimeout(checkEngine, 1000)
+  }
+
+  useEffect(() => {
+    isMounted.current = true
+    checkEngine()
+
+    getBundle(getBranchFromQueryParams())
+      .then(setPackagesData)
+      .catch((err) => {
+        console.error('The package data fetch has failed.', err)
+      })
+
+    getGenesisPlazaContent()
+      .then(setGenesisPlaza)
+      .catch((err) => {
+        console.error('Fail while retrieving the genesis content data', err)
+      })
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!isMounted.current || !show) return
+    setStartFrame(true)
+  }, [show])
+
+  useEffect(() => {
+    if (code && show && packageData && genesisPlaza !== null) {
+      getPreviewCode(packageData, code)
+        .then((previewCode) => {
+          const window = getWindow()
+          if (window) {
+            window.PlaygroundCode = previewCode
+            if (genesisPlaza) {
+              window.PlaygroundBaseUrl = genesisPlaza.baseUrl
+              window.PlaygroundContentMapping = genesisPlaza.content
+            }
+
+            window.postMessage('sdk-playground-update')
+          }
+        })
+        .catch((err) => {
+          console.error('Compile and send preview has failed.', err)
+        })
+    }
+  }, [code, show, packageData, genesisPlaza])
+
+  if (packageData === null) {
+    return <Loader active={loading} size="massive" />
+  }
+
+  const frameElement = document.getElementById('previewFrame')
+  const tmpFrameWindow = (frameElement as any)?.contentWindow
+  if (tmpFrameWindow?.startKernel && !tmpFrameWindow.kernelStarted) {
+    tmpFrameWindow.kernelStarted = true
+    tmpFrameWindow.startKernel()
+  }
+
+  const iframeUrl = getIframeUrl(packageData)
   if (!startFrame) return null
 
   const showDisplay = show && !loading ? {} : { display: 'none' }

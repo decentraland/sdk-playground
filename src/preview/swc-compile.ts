@@ -1,6 +1,5 @@
 import { transformSync } from '@swc/wasm-web'
 import { Config } from './swc-compiler-types'
-// import { getBranchFromQueryParams, getBundle } from '../utils/bundle'
 
 let swc: { transformSync: typeof transformSync }
 

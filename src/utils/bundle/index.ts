@@ -75,13 +75,13 @@ function getUrls(version: string): ListOfURL {
  * Get the bundle(js and types) depending on the type of editor.
  * @returns return the js code and its types
  */
-export async function getBundle(version: string = 'latest'): Promise<PackagesData> {
+export async function getBundle(version: string): Promise<PackagesData> {
   return getPackagesData(version)
 }
 
 export function getBranchFromQueryParams() {
   const params = new URLSearchParams(document.location.search)
-  return params.get('sdk-branch') || 'main'
+  return params.get('sdk-branch') || params.get('sdk-version') || 'latest'
 }
 
 function getRendererBaseUrl(defaultUrl?: string): string {
@@ -130,7 +130,7 @@ async function getPackagesData(version: string): Promise<PackagesData> {
     return cache.get(version)!
   }
 
-  console.log('getPackagesDagta => ' + version)
+  console.log(`Getting package data from version ${version}`)
 
   const urls = getUrls(version)
   try {
@@ -176,15 +176,7 @@ async function getPackagesData(version: string): Promise<PackagesData> {
     cache.set(version, ret)
   } catch (err) {
     console.error(err)
-
-    // Fallback every wrong version to latest
-    if (version !== 'latest') {
-      // return getPackagesData('latest')
-    }
-
-    throw new Error(
-      `Fatal error, package data fetching fails ${version} and it couldn't be possible to fallback to latest version.`
-    )
+    throw new Error(`Fatal error, package data fetching fails ${version}.`)
   }
 
   return cache.get(version)!
