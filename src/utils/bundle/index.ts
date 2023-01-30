@@ -84,40 +84,22 @@ export function getBranchFromQueryParams() {
   return params.get('sdk-branch') || params.get('sdk-version') || 'latest'
 }
 
-function getRendererBaseUrl(defaultUrl?: string): string {
+function getExplorerBaseUrl(defaultUrl?: string): string {
   const qs = new URLSearchParams(document.location.search)
 
-  if (qs.has('renderer')) {
-    return qs.get('renderer')!
+  if (qs.has('explorer')) {
+    return qs.get('explorer')!
   }
 
-  if (qs.has('renderer-branch')) {
-    return `https://renderer-artifacts.decentraland.org/branch/${qs.get('renderer-branch')}`
+  if (qs.has('explorer-branch')) {
+    return `https://renderer-artifacts.decentraland.org/branch/${qs.get('explorer-branch')}`
   }
 
-  if (qs.has('renderer-version')) {
-    return `https://cdn.decentraland.org/@dcl/unity-renderer/${qs.get('renderer-version')}`
+  if (qs.has('explorer-version')) {
+    return `https://cdn.decentraland.org/@dcl/explorer/${qs.get('explorer-version')}`
   }
 
-  return defaultUrl || 'https://renderer-artifacts.decentraland.org/branch/main'
-}
-
-function getKernelBaseUrl(defaultUrl?: string): string {
-  const qs = new URLSearchParams(document.location.search)
-
-  if (qs.has('kernel')) {
-    return qs.get('kernel')!
-  }
-
-  if (qs.has('kernel-version')) {
-    return `https://cdn.decentraland.org/@dcl/kernel/${qs.get('kernel-version')}`
-  }
-
-  if (qs.has('kernel-branch')) {
-    return `https://sdk-team-cdn.decentraland.org/@dcl/kernel/branch/${qs.get('kernel-branch')}`
-  }
-
-  return defaultUrl || 'https://sdk-team-cdn.decentraland.org/@dcl/kernel/branch/main'
+  return defaultUrl || `https://renderer-artifacts.decentraland.org/branch/dev`
 }
 
 /**
@@ -142,13 +124,22 @@ async function getPackagesData(version: string): Promise<PackagesData> {
       fetch(urls.snippetsInfoJsonUrl).then((res) => res.json())
     ])
 
-    const dependencies: DependenciesVersion = {
-      kernelUrl: getKernelBaseUrl(
-        `https://cdn.decentraland.org/@dcl/kernel/` + sdk7PackageJson.dependencies['@dcl/kernel']
-      ),
-      rendererUrl: getRendererBaseUrl(
-        `https://cdn.decentraland.org/@dcl/unity-renderer/` + sdk7PackageJson.dependencies['@dcl/unity-renderer']
-      )
+    let dependencies: DependenciesVersion
+    const explorerVersion = sdk7PackageJson.dependencies['@dcl/explorer']
+    if (explorerVersion) {
+      dependencies = {
+        kernelUrl: getExplorerBaseUrl(`https://cdn.decentraland.org/@dcl/explorer/` + explorerVersion),
+        rendererUrl: getExplorerBaseUrl(`https://cdn.decentraland.org/@dcl/explorer/` + explorerVersion)
+      }
+    } else {
+      dependencies = {
+        kernelUrl: getExplorerBaseUrl(
+          `https://cdn.decentraland.org/@dcl/kernel/` + sdk7PackageJson.dependencies['@dcl/kernel']
+        ),
+        rendererUrl: getExplorerBaseUrl(
+          `https://cdn.decentraland.org/@dcl/unity-renderer/` + sdk7PackageJson.dependencies['@dcl/unity-renderer']
+        )
+      }
     }
 
     const sceneTypes =
