@@ -10,6 +10,7 @@ const EthereumController = require('~system/EthereumController');
 const process = {env: {}};
         ${gameJsTemplate}
 exports.onUpdate = globalThis.onUpdate
+exports.onStart = globalThis.onStart
       `
   const codeToCompile = packageData?.scene.types + ';' + code
   const compiledCode = await compileScene(codeToCompile)
