@@ -81,7 +81,7 @@ export async function getBundle(version: string): Promise<PackagesData> {
 
 export function getBranchFromQueryParams() {
   const params = new URLSearchParams(document.location.search)
-  return params.get('sdk-branch') || params.get('sdk-version') || 'latest'
+  return params.get('sdk-branch') || params.get('sdk-version') || 'main'
 }
 
 function getExplorerBaseUrl(defaultUrl?: string): string {
