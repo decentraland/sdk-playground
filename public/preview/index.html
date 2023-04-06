@@ -712,7 +712,7 @@
       return 'https://sdk-team-cdn.decentraland.org/@dcl/kernel/branch/main'
     }
 
-    async function  initKernel() {
+    async function initKernel() {
       const kernelBaseUrl = await getKernelBaseUrl()
       const kernelScript = (new URL('index.js', `${kernelBaseUrl}/`)).toString()
       const rendererBaseUrl = await getRendererBaseUrl()
@@ -721,7 +721,7 @@
 
       const previewServerUrl = 'https://sdk-test-scenes.decentraland.zone'
       const position = url.searchParams.get('position') || '0,0'
-      const LOS = url.searchParams.get('LOS') || '2'
+      const LOS = url.searchParams.get('LOS') || '1'
 
       const catalystUrl = url.searchParams.get('CATALYST') || previewServerUrl
 
