@@ -562,6 +562,11 @@
       box-shadow: none;
     }
   </style>
+
+  <script
+    src="https://js.sentry-cdn.com/631e1e86f5c48fe52e50072ab7ddf063.min.js"
+    crossorigin="anonymous"
+  ></script>
 </head>
 
 <body class="dcl-loading">
@@ -582,6 +587,18 @@
   </script>
 
   <script>
+    // No need to add new configurations, this is an optional step
+    /* Sentry.onLoad(function() {
+      Sentry.init({
+        release: ???,
+        environment: ???,
+        // No need to configure DSN here, it is already configured in the loader script
+        sampleRate: 0.5,
+      })
+    }) */
+  </script>
+
+  <script>
     function errorToString(error) {
       if (typeof error === 'object') {
         if (error.message) return error.message
@@ -592,6 +609,37 @@
       }
       if (typeof error === 'string') return error
       return Object.prototype.toString.call(error)
+    }
+
+    function kernelSeverityToSentrySeverity(level) {
+      switch (level) {
+        case 'warning':
+          return 'warning'
+        case 'critical':
+          return 'fatal'
+        case 'fatal':
+          return 'fatal'
+        case 'serious':
+          return 'error'
+        default:
+          return 'fatal'
+      }
+    }
+
+    function trackError(error, payload, level = 'critical') {
+      Sentry.withScope(function (scope) {
+        payload = payload || {}
+        injectTrackingMetadata(payload)
+        scope.setLevel(kernelSeverityToSentrySeverity(level))
+        scope.setExtras(payload || {})
+        let err =
+          typeof error === 'string'
+            ? new Error(error)
+            : error && error instanceof Error
+            ? error
+            : new Error(errorToString(error))
+        Sentry.captureException(err)
+      })
     }
 
     function mockStorage({ toLocalStorageKey = '' }) {
@@ -769,6 +817,8 @@
         } catch {
           handleError('Critical error', '' + error.error)
         }
+
+        trackError(error.error, { context: 'kernel', ...(error.extra || {}) }, error.level)
       })
 
       kernel.on('rendererVisible', (event) => {
