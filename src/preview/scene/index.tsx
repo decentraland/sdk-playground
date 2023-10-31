@@ -2,7 +2,7 @@ import { Loader } from 'decentraland-ui'
 import { useEffect, useRef, useState } from 'react'
 import { getBranchFromQueryParams, getBundle } from '../../utils/bundle'
 import { PackagesData } from '../../utils/bundle/types'
-import { ContentData, getGenesisPlazaContent } from '../../utils/content'
+import { ContentData, getEntityPointerContentMappings, getGenesisPlazaContent } from '../../utils/content'
 import { getPreviewCode } from './scene-code'
 
 interface PropTypes {
@@ -49,6 +49,7 @@ function Preview({ code, show }: PropTypes) {
   const [loading, setLoading] = useState<boolean>(true)
   const [packageData, setPackagesData] = useState<PackagesData | null>(null)
   const [genesisPlaza, setGenesisPlaza] = useState<ContentData | undefined | null>(null)
+  const [entityPointerContent, setEntityPointerContent] = useState<ContentData | undefined | null>(null)
 
   function getWindow() {
     return frameRef.current?.contentWindow as any
@@ -83,6 +84,12 @@ function Preview({ code, show }: PropTypes) {
         console.error('Fail while retrieving the genesis content data', err)
       })
 
+    getEntityPointerContentMappings()
+      .then(setEntityPointerContent)
+      .catch((err) => {
+        console.error('Fail while retrieving the entity pointer content data', err)
+      })
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -101,6 +108,19 @@ function Preview({ code, show }: PropTypes) {
             if (genesisPlaza) {
               window.PlaygroundBaseUrl = genesisPlaza.baseUrl
               window.PlaygroundContentMapping = genesisPlaza.content
+            }
+
+            if (entityPointerContent) {
+              window.PlaygroundContentMapping = window.PlaygroundContentMapping
+                ? window.PlaygroundContentMapping.concat(
+                    entityPointerContent.content.filter(
+                      (pointerContent) =>
+                        !window.PlaygroundContentMapping.some(
+                          (existingContent: any) => existingContent.file === pointerContent.file
+                        )
+                    )
+                  )
+                : entityPointerContent.content
             }
 
             window.postMessage('sdk-playground-update')

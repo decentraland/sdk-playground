@@ -9,6 +9,7 @@ export type ContentData = {
   contentDeclaration: string
 }
 let cachedData: ContentData | null = null
+let entityPointerCachedData: ContentData | null = null
 
 export async function getGenesisPlazaContent(): Promise<ContentData | undefined> {
   const contentUrl = 'https://peer.decentraland.org/content'
@@ -28,5 +29,29 @@ export async function getGenesisPlazaContent(): Promise<ContentData | undefined>
       contentDeclaration
     }
     return cachedData
+  } catch (err) {}
+}
+
+export async function getEntityPointerContentMappings(): Promise<ContentData | undefined> {
+  const contentUrl = 'https://peer.decentraland.org/content'
+  if (entityPointerCachedData) {
+    return entityPointerCachedData
+  }
+  try {
+    const qs = new URLSearchParams(document.location.search)
+
+    if (!qs.has('entity_pointer')) return
+
+    const pointer = qs.get('entity_pointer')
+    const pointerUrl = `${contentUrl}/entities/${pointer}`
+    const pointerUrlResponse = ((await (await fetch(pointerUrl)).json()) as any)[0]
+    const content = pointerUrlResponse.content as ContentMapping[]
+
+    entityPointerCachedData = {
+      baseUrl: `${contentUrl}/contents/`,
+      content,
+      contentDeclaration: ''
+    }
+    return entityPointerCachedData
   } catch (err) {}
 }
