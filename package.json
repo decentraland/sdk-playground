@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@dcl/ecs-math": "^2.0.2",
     "@dcl/eslint-config": "^1.0.6",
-    "@dcl/react-ecs": "^0.0.1-3100621952.commit-d6e10e5",
-    "@dcl/sdk": "^7.0.0-2875155444.commit-bb5e498",
+    "@dcl/react-ecs": "^7.4.7",
+    "@dcl/sdk": "^7.4.7",
     "@monaco-editor/react": "^4.4.5",
     "@swc/wasm-web": "^1.2.212",
     "@testing-library/jest-dom": "^5.16.4",

@@ -1,6 +1,6 @@
 import Yoga from 'yoga-layout-prebuilt'
 
-export type PositionTypes = 'position' | 'margin' | 'padding' | 'border'
+export type PositionTypes = 'position' | 'margin' | 'padding'
 
 export type Position = {
   top: number | string
@@ -21,7 +21,6 @@ export interface YogaProps {
   position: Position
   padding: Position
   margin: Position
-  border: Position
   direction: Yoga.YogaDirection
   width: number | string
   height: number | string
@@ -43,7 +42,7 @@ export const defaultPosition = (pos?: Position) => ({
   left: pos?.left ?? 0
 })
 
-export const defaultPositionLayout = (): Pick<YogaProps, 'position' | 'padding' | 'margin' | 'border'> => ({
+export const defaultPositionLayout = (): Pick<YogaProps, 'position' | 'padding' | 'margin'> => ({
   position: defaultPosition({
     left: NaN,
     top: NaN,
@@ -51,11 +50,10 @@ export const defaultPositionLayout = (): Pick<YogaProps, 'position' | 'padding' 
     bottom: NaN
   }),
   padding: defaultPosition(),
-  margin: defaultPosition(),
-  border: defaultPosition()
+  margin: defaultPosition()
 })
 
-export const defaultLayout = (): Omit<YogaProps, 'direction' | 'position' | 'padding' | 'margin' | 'border'> => ({
+export const defaultLayout = (): Omit<YogaProps, 'direction' | 'position' | 'padding' | 'margin'> => ({
   display: Yoga.DISPLAY_FLEX,
   overflow: Yoga.OVERFLOW_VISIBLE,
   flexBasis: NaN,
