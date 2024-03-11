@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Font, TextAlign, EntityPropTypes } from '@dcl/react-ecs'
+import { UiFontType, TextAlignType, EntityPropTypes, UiLabelProps, Position, PositionShorthand } from '@dcl/react-ecs'
 import Yoga, { DIRECTION_INHERIT } from 'yoga-layout-prebuilt'
 
 import { defaultLayout, PositionTypes, defaultPositionLayout } from './layout'
@@ -22,7 +22,7 @@ type Color4 = {
 }
 
 type UiBackground = {
-  backgroundColor: Color4
+  color: Color4
 }
 
 interface PropTypes extends EntityPropTypes {
@@ -30,10 +30,16 @@ interface PropTypes extends EntityPropTypes {
   uiBackground?: UiBackground
   isRootNode?: boolean
   computedLayout?: ComputedLayout
+  uiText: UiLabelProps
 }
 
 function toYogaSetProp(value: string): keyof Yoga.YogaNode {
   return `set${value[0].toUpperCase()}${value.slice(1, value.length)}` as keyof Yoga.YogaNode
+}
+
+function isPositionObject(value: Partial<Position> | PositionShorthand): value is Partial<Position> {
+  if (typeof value === 'number' || typeof value === 'string') return false
+  return !!['top', 'right', 'bottom', 'left'].find(($) => Object.hasOwn(value, $))
 }
 
 export const YogaJsx: React.FC<Partial<PropTypes>> = (props) => {
@@ -61,15 +67,16 @@ export const YogaJsx: React.FC<Partial<PropTypes>> = (props) => {
       const typedKey: PositionTypes = key as PositionTypes
       const value = nextProps.uiTransform[typedKey]
 
-      if (!value) continue
+      if (!value || !isPositionObject(value)) continue
 
       for (const pos in value) {
         const direction = `EDGE_${pos.toUpperCase()}` as keyof typeof Yoga
         const yogaDirection = Yoga[direction] as Yoga.YogaEdge
 
         if (pos === 'left' || pos === 'top' || pos === 'right' || pos === 'bottom') {
+          const _value = value[pos] as string | number
           try {
-            ;(node[toYogaSetProp(key)] as typeof node.setPosition)(yogaDirection, value[pos])
+            ;(node[toYogaSetProp(key)] as typeof node.setPosition)(yogaDirection, _value)
           } catch (e) {
             console.log(e, typedKey, value)
           }
@@ -109,9 +116,9 @@ export const YogaJsx: React.FC<Partial<PropTypes>> = (props) => {
 
   function prepareUiStyles() {
     if (!props.uiBackground) return {}
-    const { backgroundColor } = props.uiBackground
+    const { color } = props.uiBackground
     const styles = {
-      backgroundColor: backgroundColor && toColor4(backgroundColor)
+      backgroundColor: color && toColor4(color)
     }
     return styles
   }
@@ -121,10 +128,10 @@ export const YogaJsx: React.FC<Partial<PropTypes>> = (props) => {
     const { value, font, color, fontSize, textAlign, ...extraProps } = props.uiText
     const styles = {
       ...extraProps,
-      font: font && Font[font],
+      font: font,
       color: color && toColor3(color),
       fontSize: fontSize,
-      textAlign: textAlign !== undefined && TextAlign[textAlign]
+      textAlign: textAlign !== undefined && textAlign
     }
     return styles
   }

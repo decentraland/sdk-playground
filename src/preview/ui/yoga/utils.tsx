@@ -1,4 +1,4 @@
-import { Color3 } from '@dcl/react-ecs'
+import { Color3 } from '@dcl/ecs-math'
 
 type Color4 = {
   r: 0
